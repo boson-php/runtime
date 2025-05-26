@@ -22,6 +22,7 @@
         "boson-php/http-body-decoder": "^1.0",
         "boson-php/http-static-provider": "^1.0",
         "boson-php/http-contracts": "^1.0",
+        "boson-php/os-info": "^1.0",
         "boson-php/weak-types": "^1.0",
         "ffi/env": "^1.0",
         "psr/event-dispatcher": "^1.0",
