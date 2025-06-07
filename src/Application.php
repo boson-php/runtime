@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Boson;
 
+use Boson\Api\ApplicationExtension;
+use Boson\Api\Dialog\ApplicationDialog;
+use Boson\Api\DialogApiInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventDispatcherInterface;
 use Boson\Dispatcher\EventListener;
@@ -80,6 +83,11 @@ final class Application implements EventListenerProviderInterface
      * Application-aware event dispatcher.
      */
     private readonly EventDispatcherInterface $dispatcher;
+
+    /**
+     * Gets access to the Dialog API of the application.
+     */
+    public readonly DialogApiInterface $dialog;
 
     /**
      * Provides more convenient and faster access to the
@@ -192,9 +200,28 @@ final class Application implements EventListenerProviderInterface
 
         $this->windows = $this->createWindowManager();
 
+        $this->dialog = $this->createApplicationExtension(ApplicationDialog::class);
+
         if ($this->info->autorun) {
             $this->registerDeferRunnerIfNotRegistered();
         }
+    }
+
+    /**
+     * @template TArgApiProvider of ApplicationExtension
+     *
+     * @param class-string<TArgApiProvider> $class
+     *
+     * @return TArgApiProvider
+     */
+    private function createApplicationExtension(string $class): ApplicationExtension
+    {
+        return new $class(
+            api: $this->api,
+            context: $this,
+            listener: $this->events,
+            dispatcher: $this->dispatcher,
+        );
     }
 
     /**
