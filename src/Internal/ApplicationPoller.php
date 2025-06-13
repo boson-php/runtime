@@ -15,7 +15,7 @@ use FFI\CData;
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson
  */
-final class ProcessUnlockPlaceholder implements ApplicationPollerInterface
+final class ApplicationPoller implements ApplicationPollerInterface
 {
     private readonly CData $ptr;
 
@@ -30,18 +30,18 @@ final class ProcessUnlockPlaceholder implements ApplicationPollerInterface
 
     public function next(): bool
     {
-        if ($this->app->isRunning === false) {
-            return false;
+        if ($this->exception !== null) {
+            [$exception, $this->exception] = [$this->exception, null];
+
+            throw $exception;
         }
 
         if (\Fiber::getCurrent() !== null) {
             \Fiber::suspend($this->app);
         }
 
-        if ($this->exception !== null) {
-            [$exception, $this->exception] = [$this->exception, null];
-
-            throw $exception;
+        if ($this->app->isRunning === false) {
+            return false;
         }
 
         $this->api->saucer_application_run_once($this->ptr);

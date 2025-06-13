@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Boson;
 
 use Boson\Api\ApplicationExtension;
-use Boson\Api\ApplicationExtensionContainer;
 use Boson\Api\Dialog\ApplicationDialog;
 use Boson\Api\DialogApiInterface;
 use Boson\Dispatcher\DelegateEventListener;
@@ -19,12 +18,11 @@ use Boson\Event\ApplicationStarting;
 use Boson\Event\ApplicationStopped;
 use Boson\Event\ApplicationStopping;
 use Boson\Exception\NoDefaultWindowException;
+use Boson\Internal\ApplicationPoller;
 use Boson\Internal\BootHandler\BootHandlerInterface;
 use Boson\Internal\BootHandler\WindowsDetachConsoleBootHandler;
-use Boson\Internal\DebugEnvResolver;
 use Boson\Internal\DeferRunner\DeferRunnerInterface;
 use Boson\Internal\DeferRunner\NativeShutdownFunctionRunner;
-use Boson\Internal\ProcessUnlockPlaceholder;
 use Boson\Internal\QuitHandler\PcntlQuitHandler;
 use Boson\Internal\QuitHandler\QuitHandlerInterface;
 use Boson\Internal\QuitHandler\WindowsQuitHandler;
@@ -37,7 +35,6 @@ use Boson\Window\Event\WindowClosed;
 use Boson\Window\Manager\WindowManager;
 use Boson\Window\Window;
 use FFI\CData;
-use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface as PsrEventDispatcherInterface;
 
 /**
@@ -89,9 +86,7 @@ final class Application implements EventListenerProviderInterface
     /**
      * Gets access to the Dialog API of the application.
      */
-    public DialogApiInterface $dialog {
-        get => $this->dialog ??= $this->extensions->get(DialogApiInterface::class);
-    }
+    public readonly DialogApiInterface $dialog;
 
     /**
      * Provides more convenient and faster access to the
@@ -165,8 +160,6 @@ final class Application implements EventListenerProviderInterface
      */
     public readonly ApplicationPollerInterface $poller;
 
-    private readonly ContainerInterface $extensions;
-
     /**
      * @param PsrEventDispatcherInterface|null $dispatcher an optional event
      *        dispatcher for handling application events
@@ -198,38 +191,96 @@ final class Application implements EventListenerProviderInterface
             new NativeShutdownFunctionRunner(),
         ],
     ) {
-        $this->boot();
+        // Initialization Application's fields and properties
+        $this->api = self::createLibSaucer($info->library);
+        $this->isDebug = self::createIsDebugParameter($info->debug);
+        $this->events = $this->dispatcher = self::createEventListener($dispatcher);
+        $this->id = self::createApplicationId($this->api, $this->info->name, $this->info->threads);
+        $this->poller = self::createApplicationPoller($this->api, $this);
+        $this->windows = self::createWindowManager($this->api, $this, $info, $this->dispatcher);
 
-        $this->api = new LibSaucer($this->info->library);
-        $this->isDebug = DebugEnvResolver::resolve($this->info->debug);
-        $this->events = $this->dispatcher = $this->createEventListener($dispatcher);
-        $this->id = $this->createApplicationId($this->info->name, $this->info->threads);
-        $this->poller = new ProcessUnlockPlaceholder(
-            api: $this->api,
-            app: $this,
-        );
-        $this->windows = $this->createWindowManager();
-        $this->extensions = new ApplicationExtensionContainer(
+        // Initialization of Application's API
+        $this->dialog = $this->createApplicationExtension(ApplicationDialog::class);
+
+        // Register Application's subsystems
+        $this->registerSchemes();
+        $this->registerDefaultEventListeners();
+        $this->registerQuitHandlers();
+        $this->registerDeferRunner();
+
+        // Boot the Application
+        $this->boot();
+    }
+
+    /**
+     * Creates a new instance of {@see LibSaucer} that provides access to the
+     * native WebView API library. The returned object allows interacting with
+     * the underlying WebView (Saucer) functionality through FFI bindings.
+     *
+     * The library path can be automatically detected if not explicitly specified.
+     *
+     * This method is responsible for initializing the core WebView functionality
+     * that powers the application's window and web content capabilities.
+     *
+     * @param non-empty-string|null $library Optional path to the WebView library
+     */
+    private static function createLibSaucer(?string $library): LibSaucer
+    {
+        return new LibSaucer($library);
+    }
+
+    /**
+     * Resolves the debug mode state for the application based on the provided
+     * configuration and environment settings.
+     *
+     * This method uses php.ini dev mode detection to determine the actual debug
+     * state, taking into account both explicit configuration and automatic
+     * environment detection.
+     */
+    private static function createIsDebugParameter(?bool $debug): bool
+    {
+        if ($debug === null) {
+            $debug = false;
+
+            /**
+             * Enable debug mode if "zend.assertions" is 1.
+             *
+             * @link https://www.php.net/manual/en/function.assert.php
+             */
+            assert($debug = true);
+        }
+
+        return $debug;
+    }
+
+    /**
+     * Creates a new instance of {@see ApplicationPollerInterface} that manages
+     * the application's event loop and process workflow.
+     */
+    private function createApplicationPoller(LibSaucer $api, Application $ctx): ApplicationPollerInterface
+    {
+        return new ApplicationPoller($api, $ctx);
+    }
+
+    /**
+     * @template TArgApiProvider of ApplicationExtension
+     *
+     * @param class-string<TArgApiProvider> $class
+     *
+     * @return TArgApiProvider
+     */
+    private function createApplicationExtension(string $class): ApplicationExtension
+    {
+        return new $class(
             api: $this->api,
             context: $this,
             listener: $this->events,
             dispatcher: $this->dispatcher,
         );
-
-        $this->registerExtensions();
-        $this->registerSchemes();
-        $this->registerDefaultEventListeners();
-        $this->registerQuitHandlers();
-        $this->registerDeferRunner();
-    }
-
-    private function registerExtensions(): void
-    {
-        $this->extensions->register(DialogApiInterface::class, ApplicationDialog::class);
     }
 
     /**
-     * Boot application handlers.
+     * Boot the application.
      */
     private function boot(): void
     {
@@ -244,13 +295,17 @@ final class Application implements EventListenerProviderInterface
      * This method initializes and returns a {@see WindowManager} object
      * that is responsible for managing all application windows.
      */
-    private function createWindowManager(): WindowManager
-    {
+    private static function createWindowManager(
+        LibSaucer $api,
+        Application $app,
+        ApplicationCreateInfo $info,
+        EventDispatcherInterface $dispatcher,
+    ): WindowManager {
         return new WindowManager(
-            api: $this->api,
-            app: $this,
-            info: $this->info->window,
-            dispatcher: $this->dispatcher,
+            api: $api,
+            app: $app,
+            info: $info->window,
+            dispatcher: $dispatcher,
         );
     }
 
@@ -304,7 +359,7 @@ final class Application implements EventListenerProviderInterface
      * Creates local (application-aware) event listener
      * based on the provided dispatcher.
      */
-    private function createEventListener(?PsrEventDispatcherInterface $dispatcher): EventListener
+    private static function createEventListener(?PsrEventDispatcherInterface $dispatcher): EventListener
     {
         if ($dispatcher === null) {
             return new EventListener();
@@ -319,11 +374,11 @@ final class Application implements EventListenerProviderInterface
      * @param non-empty-string $name
      * @param int<1, max>|null $threads
      */
-    private function createApplicationId(string $name, ?int $threads): ApplicationId
+    private static function createApplicationId(LibSaucer $api, string $name, ?int $threads): ApplicationId
     {
         return ApplicationId::fromAppHandle(
-            api: $this->api,
-            handle: $this->createApplicationPointer($name, $threads),
+            api: $api,
+            handle: self::createApplicationPointer($api, $name, $threads),
             name: $name,
         );
     }
@@ -335,14 +390,14 @@ final class Application implements EventListenerProviderInterface
      * @param int<1, max>|null $threads
      */
     #[RequiresDealloc]
-    private function createApplicationPointer(string $name, ?int $threads): CData
+    private static function createApplicationPointer(LibSaucer $api, string $name, ?int $threads): CData
     {
-        $options = $this->createApplicationOptionsPointer($name, $threads);
+        $options = self::createApplicationOptionsPointer($api, $name, $threads);
 
         try {
-            return $this->api->saucer_application_init($options);
+            return $api->saucer_application_init($options);
         } finally {
-            $this->api->saucer_options_free($options);
+            $api->saucer_options_free($options);
         }
     }
 
@@ -353,13 +408,14 @@ final class Application implements EventListenerProviderInterface
      * @param int<1, max>|null $threads
      */
     #[RequiresDealloc]
-    private function createApplicationOptionsPointer(string $name, ?int $threads): CData
+    private static function createApplicationOptionsPointer(LibSaucer $api, string $name, ?int $threads): CData
     {
-        $options = $this->api->saucer_options_new($name);
+        $options = $api->saucer_options_new($name);
 
         $threads = ThreadsCountResolver::resolve($threads);
+
         if ($threads !== null) {
-            $this->api->saucer_options_set_threads($options, $threads);
+            $api->saucer_options_set_threads($options, $threads);
         }
 
         return $options;
@@ -458,7 +514,9 @@ final class Application implements EventListenerProviderInterface
 
         $this->dispatcher->dispatch(new ApplicationStarted($this));
 
-        $this->api->saucer_application_run($this->id->ptr);
+        while ($this->poller->next()) {
+            \usleep(1);
+        }
     }
 
     /**
