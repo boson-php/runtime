@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Boson\WebView;
 
+use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Dispatcher\DelegateEventListener;
-use Boson\Dispatcher\EventDispatcherInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Dispatcher\EventListenerInterface;
 use Boson\Dispatcher\EventListenerProvider;
-use Boson\Dispatcher\EventListenerProviderInterface;
 use Boson\Exception\BosonException;
 use Boson\Internal\Saucer\LibSaucer;
 use Boson\Shared\Marker\BlockingOperation;
@@ -35,9 +33,9 @@ use Boson\WebView\Internal\SaucerWebViewEventHandler;
 use Boson\Window\Window;
 use Boson\Window\WindowId;
 use JetBrains\PhpStorm\Language;
-use Psr\EventDispatcher\EventDispatcherInterface as PsrEventDispatcherInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
-final class WebView implements EventListenerProviderInterface
+final class WebView implements EventListenerInterface
 {
     use EventListenerProvider;
 
@@ -55,15 +53,9 @@ final class WebView implements EventListenerProviderInterface
     public readonly WebViewId $id;
 
     /**
-     * Gets access to the listener of the webview events
-     * and intention subscriptions.
+     * WebView-aware event listener & dispatcher.
      */
-    public readonly EventListenerInterface $events;
-
-    /**
-     * WebView-aware event dispatcher.
-     */
-    private readonly EventDispatcherInterface $dispatcher;
+    private readonly EventListener $listener;
 
     /**
      * Gets access to the Scripts API of the webview.
@@ -200,7 +192,7 @@ final class WebView implements EventListenerProviderInterface
     ) {
         // Initialization WebView's fields and properties
         $this->id = self::createWebViewId($this->window);
-        $this->events = $this->dispatcher = self::createEventListener($dispatcher);
+        $this->listener = self::createEventListener($dispatcher);
 
         // Initialization of WebView's API
         $this->scripts = $this->createWebViewExtension(WebViewScriptsSet::class);
@@ -210,7 +202,7 @@ final class WebView implements EventListenerProviderInterface
         $this->components = $this->createWebViewExtension(WebViewWebComponents::class);
         $this->battery = $this->createWebViewExtension(WebViewBattery::class);
         $this->schemes = $this->createWebViewExtension(WebViewSchemeHandler::class);
-        $this->handler = self::createWebViewEventHandler($api, $this, $this->dispatcher, $this->state);
+        $this->handler = self::createWebViewEventHandler($api, $this, $this->listener, $this->state);
 
         // Register WebView's subsystems
 
@@ -230,7 +222,7 @@ final class WebView implements EventListenerProviderInterface
      * Creates local (webview-aware) event listener
      * based on the provided dispatcher.
      */
-    private static function createEventListener(PsrEventDispatcherInterface $dispatcher): EventListener
+    private static function createEventListener(EventDispatcherInterface $dispatcher): EventListener
     {
         return new DelegateEventListener($dispatcher);
     }
@@ -270,8 +262,7 @@ final class WebView implements EventListenerProviderInterface
         return new $class(
             api: $this->api,
             context: $this,
-            listener: $this->events,
-            dispatcher: $this->dispatcher,
+            listener: $this->listener,
         );
     }
 

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Battery;
 
-use Boson\Dispatcher\EventDispatcherInterface;
-use Boson\Dispatcher\EventListenerInterface;
+use Boson\Dispatcher\EventListener;
 use Boson\Internal\Saucer\LibSaucer;
 use Boson\Shared\Marker\ExpectsSecurityContext;
 use Boson\WebView\Api\Battery\Event\BatteryChargingStateChanged;
@@ -58,24 +57,28 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
      * @var BatteryInfoType
      */
     private ?array $data = null {
-        get => $this->data ??= $this->get();
+        get => match (true) {
+            $this->data === null => $this->data = $this->get(),
+            $this->isEventsEnabled => $this->data,
+            default => $this->get(),
+        };
     }
 
-    public function __construct(
-        LibSaucer $api,
-        WebView $context,
-        EventListenerInterface $listener,
-        EventDispatcherInterface $dispatcher,
-    ) {
-        parent::__construct(
-            api: $api,
-            context: $context,
-            listener: $listener,
-            dispatcher: $dispatcher,
-        );
+    /**
+     * Whether to enable battery-related events.
+     */
+    private readonly bool $isEventsEnabled;
 
-        $this->registerDefaultFunctions();
-        $this->registerDefaultClientEventListeners();
+    public function __construct(LibSaucer $api, WebView $context, EventListener $listener)
+    {
+        parent::__construct($api, $context, $listener);
+
+        $this->isEventsEnabled = $this->context->info->battery->enableEvents;
+
+        if ($this->isEventsEnabled) {
+            $this->registerDefaultFunctions();
+            $this->registerDefaultClientEventListeners();
+        }
     }
 
     private function registerDefaultFunctions(): void

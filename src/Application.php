@@ -7,12 +7,10 @@ namespace Boson;
 use Boson\Api\ApplicationExtension;
 use Boson\Api\Dialog\ApplicationDialog;
 use Boson\Api\DialogApiInterface;
+use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Dispatcher\DelegateEventListener;
-use Boson\Dispatcher\EventDispatcherInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Dispatcher\EventListenerInterface;
 use Boson\Dispatcher\EventListenerProvider;
-use Boson\Dispatcher\EventListenerProviderInterface;
 use Boson\Event\ApplicationStarted;
 use Boson\Event\ApplicationStarting;
 use Boson\Event\ApplicationStopped;
@@ -35,12 +33,12 @@ use Boson\Window\Event\WindowClosed;
 use Boson\Window\Manager\WindowManager;
 use Boson\Window\Window;
 use FFI\CData;
-use Psr\EventDispatcher\EventDispatcherInterface as PsrEventDispatcherInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @api
  */
-final class Application implements EventListenerProviderInterface
+final class Application implements EventListenerInterface
 {
     use EventListenerProvider;
 
@@ -73,15 +71,9 @@ final class Application implements EventListenerProviderInterface
     public readonly WindowManager $windows;
 
     /**
-     * Gets access to the listener of the window events
-     * and intention subscriptions.
+     * Application-aware event listener & dispatcher.
      */
-    public readonly EventListenerInterface $events;
-
-    /**
-     * Application-aware event dispatcher.
-     */
-    private readonly EventDispatcherInterface $dispatcher;
+    private readonly EventListener $listener;
 
     /**
      * Gets access to the Dialog API of the application.
@@ -161,7 +153,7 @@ final class Application implements EventListenerProviderInterface
     public readonly ApplicationPollerInterface $poller;
 
     /**
-     * @param PsrEventDispatcherInterface|null $dispatcher an optional event
+     * @param EventDispatcherInterface|null $dispatcher an optional event
      *        dispatcher for handling application events
      */
     public function __construct(
@@ -170,7 +162,7 @@ final class Application implements EventListenerProviderInterface
          * with which it was created.
          */
         public readonly ApplicationCreateInfo $info = new ApplicationCreateInfo(),
-        ?PsrEventDispatcherInterface $dispatcher = null,
+        ?EventDispatcherInterface $dispatcher = null,
         /**
          * @var list<BootHandlerInterface>
          */
@@ -194,10 +186,10 @@ final class Application implements EventListenerProviderInterface
         // Initialization Application's fields and properties
         $this->api = self::createLibSaucer($info->library);
         $this->isDebug = self::createIsDebugParameter($info->debug);
-        $this->events = $this->dispatcher = self::createEventListener($dispatcher);
+        $this->listener = self::createEventListener($dispatcher);
         $this->id = self::createApplicationId($this->api, $this->info->name, $this->info->threads);
         $this->poller = self::createApplicationPoller($this->api, $this);
-        $this->windows = self::createWindowManager($this->api, $this, $info, $this->dispatcher);
+        $this->windows = self::createWindowManager($this->api, $this, $info, $this->listener);
 
         // Initialization of Application's API
         $this->dialog = $this->createApplicationExtension(ApplicationDialog::class);
@@ -274,8 +266,7 @@ final class Application implements EventListenerProviderInterface
         return new $class(
             api: $this->api,
             context: $this,
-            listener: $this->events,
-            dispatcher: $this->dispatcher,
+            listener: $this->listener,
         );
     }
 
@@ -327,8 +318,8 @@ final class Application implements EventListenerProviderInterface
      */
     private function registerDefaultEventListeners(): void
     {
-        $this->events->addEventListener(WindowClosed::class, $this->onWindowClose(...));
-        $this->events->addEventListener(ApplicationStarted::class, $this->onApplicationStarted(...));
+        $this->listener->addEventListener(WindowClosed::class, $this->onWindowClose(...));
+        $this->listener->addEventListener(ApplicationStarted::class, $this->onApplicationStarted(...));
     }
 
     /**
@@ -359,7 +350,7 @@ final class Application implements EventListenerProviderInterface
      * Creates local (application-aware) event listener
      * based on the provided dispatcher.
      */
-    private static function createEventListener(?PsrEventDispatcherInterface $dispatcher): EventListener
+    private static function createEventListener(?EventDispatcherInterface $dispatcher): EventListener
     {
         if ($dispatcher === null) {
             return new EventListener();
@@ -489,7 +480,7 @@ final class Application implements EventListenerProviderInterface
             return true;
         }
 
-        $intention = $this->dispatcher->dispatch(new ApplicationStarting($this));
+        $this->listener->dispatch($intention = new ApplicationStarting($this));
 
         return $intention->isCancelled;
     }
@@ -512,7 +503,7 @@ final class Application implements EventListenerProviderInterface
         $this->isRunning = true;
         $this->wasEverRunning = true;
 
-        $this->dispatcher->dispatch(new ApplicationStarted($this));
+        $this->listener->dispatch(new ApplicationStarted($this));
 
         while ($this->poller->next()) {
             \usleep(1);
@@ -525,7 +516,7 @@ final class Application implements EventListenerProviderInterface
      */
     private function shouldNotStop(): bool
     {
-        $intention = $this->dispatcher->dispatch(new ApplicationStopping($this));
+        $this->listener->dispatch($intention = new ApplicationStopping($this));
 
         return $intention->isCancelled;
     }
@@ -545,7 +536,7 @@ final class Application implements EventListenerProviderInterface
         $this->isRunning = false;
         $this->api->saucer_application_quit($this->id->ptr);
 
-        $this->dispatcher->dispatch(new ApplicationStopped($this));
+        $this->listener->dispatch(new ApplicationStopped($this));
     }
 
     /**
