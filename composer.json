@@ -21,6 +21,7 @@
         "boson-php/event-listener-contracts": "^0.15",
         "boson-php/http": "^0.15",
         "boson-php/http-contracts": "^0.15",
+        "boson-php/id-contracts": "^0.15",
         "boson-php/value-object-contracts": "^0.15",
         "boson-php/os-info": "^0.15",
         "boson-php/weak-types": "^0.15",
