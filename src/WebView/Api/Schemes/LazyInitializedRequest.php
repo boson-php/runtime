@@ -8,6 +8,8 @@ use Boson\Component\Http\HeadersMap;
 use Boson\Component\Http\Request;
 use Boson\Contracts\Http\HeadersInterface;
 use Boson\Contracts\Http\RequestInterface;
+use Boson\Contracts\Uri\Factory\UriFactoryInterface;
+use Boson\Contracts\Uri\UriInterface;
 use Boson\Internal\Saucer\LibSaucer;
 use FFI\CData;
 
@@ -26,12 +28,9 @@ final class LazyInitializedRequest implements RequestInterface
         );
     }
 
-    /**
-     * @var non-empty-string
-     */
-    public string $url {
-        get => $this->url ??= Request::castUrl(
-            url: $this->fetchRawUriString(),
+    public UriInterface $url {
+        get => $this->url ??= $this->uriFactory->createUriFromString(
+            uri: $this->fetchRawUriString(),
         );
     }
 
@@ -48,6 +47,7 @@ final class LazyInitializedRequest implements RequestInterface
     public function __construct(
         private readonly LibSaucer $api,
         private readonly CData $ptr,
+        private readonly UriFactoryInterface $uriFactory,
     ) {}
 
     private function fetchRawMethodString(): string
