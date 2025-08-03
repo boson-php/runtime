@@ -5,15 +5,8 @@ declare(strict_types=1);
 namespace Boson\WebView\Api\Schemes;
 
 use Boson\ApplicationPollerInterface;
-use Boson\Component\Http\Component\BodyFactory;
-use Boson\Component\Http\Component\HeadersFactory;
-use Boson\Component\Http\Component\MethodFactory;
-use Boson\Contracts\Http\Factory\Component\BodyFactoryInterface;
-use Boson\Contracts\Http\Factory\Component\HeadersFactoryInterface;
-use Boson\Contracts\Http\Factory\Component\MethodFactoryInterface;
 use Boson\Contracts\Http\RequestInterface;
 use Boson\Contracts\Http\ResponseInterface;
-use Boson\Contracts\Uri\Factory\UriFactoryInterface;
 use Boson\Dispatcher\EventListener;
 use Boson\Internal\Saucer\LibSaucer;
 use Boson\Internal\Saucer\SaucerLaunch;
@@ -34,14 +27,6 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
 
     private readonly ApplicationPollerInterface $poller;
 
-    private readonly MethodFactoryInterface $methodFactory;
-
-    private readonly UriFactoryInterface $uriFactory;
-
-    private readonly HeadersFactoryInterface $headersFactory;
-
-    private readonly BodyFactoryInterface $bodyFactory;
-
     public function __construct(
         LibSaucer $api,
         WebView $context,
@@ -54,13 +39,6 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
         );
 
         $this->mimeTypes = new MimeTypeReader();
-
-        $this->uriFactory = $context->info->uriFactory;
-        // TODO: Should be moved into configs
-        $this->methodFactory = new MethodFactory();
-        $this->headersFactory = new HeadersFactory();
-        $this->bodyFactory = new BodyFactory();
-
         $this->poller = $context->window->app->poller;
         $this->schemes = $context->window->app->info->schemes;
 
@@ -131,10 +109,6 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
         return new LazyInitializedRequest(
             api: $this->api,
             ptr: $request,
-            methodFactory: $this->methodFactory,
-            uriFactory: $this->uriFactory,
-            headersFactory: $this->headersFactory,
-            bodyFactory: $this->bodyFactory,
         );
     }
 

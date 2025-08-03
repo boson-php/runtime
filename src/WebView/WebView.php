@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\WebView;
 
+use Boson\Component\Http\Request;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Contracts\Uri\UriInterface;
@@ -123,9 +124,7 @@ final class WebView implements
             $result = $this->api->saucer_webview_url($this->id->ptr);
 
             try {
-                return $this->info->uriFactory->createUriFromString(
-                    uri: \FFI::string($result),
-                );
+                return Request::castUrl(\FFI::string($result));
             } finally {
                 \FFI::free($result);
             }

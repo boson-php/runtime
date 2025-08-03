@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Schemes;
 
-use Boson\Component\Http\Component\HeadersMap;
 use Boson\Component\Http\Request;
 use Boson\Contracts\Http\Component\HeadersInterface;
 use Boson\Contracts\Http\Component\MethodInterface;
-use Boson\Contracts\Http\Factory\Component\BodyFactoryInterface;
-use Boson\Contracts\Http\Factory\Component\HeadersFactoryInterface;
-use Boson\Contracts\Http\Factory\Component\MethodFactoryInterface;
 use Boson\Contracts\Http\RequestInterface;
-use Boson\Contracts\Uri\Factory\UriFactoryInterface;
 use Boson\Contracts\Uri\UriInterface;
 use Boson\Internal\Saucer\LibSaucer;
 use FFI\CData;
@@ -24,36 +19,24 @@ use FFI\CData;
 final class LazyInitializedRequest implements RequestInterface
 {
     public MethodInterface $method {
-        get => $this->method ??= $this->methodFactory->createMethodFromString(
-            method: $this->fetchRawMethodString(),
-        );
+        get => $this->method ??= Request::castMethod($this->fetchRawMethodString());
     }
 
     public UriInterface $url {
-        get => $this->url ??= $this->uriFactory->createUriFromString(
-            uri: $this->fetchRawUriString(),
-        );
+        get => $this->url ??= Request::castUrl($this->fetchRawUriString());
     }
 
     public HeadersInterface $headers {
-        get => $this->headers ??= $this->headersFactory->createHeadersFromIterable(
-            headers: $this->fetchRawHeadersIterable(),
-        );
+        get => $this->headers ??= Request::castHeaders($this->fetchRawHeadersIterable());
     }
 
     public string $body {
-        get => $this->body ??= $this->bodyFactory->createBodyFromString(
-            body: $this->fetchRawBodyString()
-        );
+        get => $this->body ??= Request::castBody($this->fetchRawBodyString());
     }
 
     public function __construct(
         private readonly LibSaucer $api,
         private readonly CData $ptr,
-        private MethodFactoryInterface $methodFactory,
-        private UriFactoryInterface $uriFactory,
-        private HeadersFactoryInterface $headersFactory,
-        private BodyFactoryInterface $bodyFactory,
     ) {}
 
     /**
@@ -67,7 +50,8 @@ final class LazyInitializedRequest implements RequestInterface
             $scalar = \FFI::string($method);
 
             if ($scalar === '') {
-                return 'GET';
+                /** @var non-empty-uppercase-string */
+                return (string) Request::DEFAULT_METHOD;
             }
 
             return $scalar;
