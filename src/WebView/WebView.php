@@ -147,7 +147,7 @@ final class WebView implements
      * Load HTML content into the WebView.
      */
     public string $html {
-        set(#[Language('HTML')] string|\Stringable $html) {
+        set(#[Language('HTML')] \Stringable|string $html) {
             $base64 = \base64_encode((string) $html);
 
             $this->url = \sprintf('data:text/html;base64,%s', $base64);

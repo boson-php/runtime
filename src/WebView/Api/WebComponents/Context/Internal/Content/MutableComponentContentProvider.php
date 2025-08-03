@@ -18,7 +18,7 @@ final class MutableComponentContentProvider extends ComponentContentProvider imp
     public string $html {
         /** @phpstan-ignore-next-line PHPStan does not support property inheritance */
         get => parent::$html::get();
-        set(string|\Stringable $html) {
+        set(\Stringable|string $html) {
             $this->scripts->eval(\sprintf(
                 'this.innerHTML = `%s`',
                 \addcslashes((string) $html, '`'),
@@ -29,7 +29,7 @@ final class MutableComponentContentProvider extends ComponentContentProvider imp
     public string $text {
         /** @phpstan-ignore-next-line PHPStan does not support property inheritance */
         get => parent::$text::get();
-        set(string|\Stringable $text) {
+        set(\Stringable|string $text) {
             $this->scripts->eval(\sprintf(
                 'this.textContent = `%s`',
                 \addcslashes((string) $text, '`'),

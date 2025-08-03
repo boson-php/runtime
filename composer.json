@@ -25,7 +25,10 @@
         "boson-php/value-object-contracts": "^0.15",
         "boson-php/os-info": "^0.15",
         "boson-php/weak-types": "^0.15",
+        "boson-php/uri": "^0.15",
+        "boson-php/uri-contracts": "^0.15",
         "boson-php/uri-factory": "^0.15",
+        "boson-php/uri-factory-contracts": "^0.15",
         "ffi/env": "^1.0",
         "psr/event-dispatcher": "^1.0",
         "react/promise": "^3.0"

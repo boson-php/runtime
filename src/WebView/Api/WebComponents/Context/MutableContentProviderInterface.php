@@ -13,7 +13,7 @@ interface MutableContentProviderInterface extends ContentProviderInterface
          *
          * @link https://developer.mozilla.org/docs/Web/API/Element/innerHTML
          */
-        set(string|\Stringable $html);
+        set(\Stringable|string $html);
     }
 
     public string $text {
@@ -23,6 +23,6 @@ interface MutableContentProviderInterface extends ContentProviderInterface
          *
          * @link https://developer.mozilla.org/docs/Web/API/Node/textContent
          */
-        set(string|\Stringable $text);
+        set(\Stringable|string $text);
     }
 }

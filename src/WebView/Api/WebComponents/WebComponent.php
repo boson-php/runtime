@@ -62,7 +62,7 @@ abstract class WebComponent implements
      */
     public string $innerHtml {
         get => $this->ctx->content->html;
-        set(string|\Stringable $html) {
+        set(\Stringable|string $html) {
             $this->ctx->content->html = $html;
         }
     }
@@ -76,7 +76,7 @@ abstract class WebComponent implements
      */
     public string $textContent {
         get => $this->ctx->content->text;
-        set(string|\Stringable $text) {
+        set(\Stringable|string $text) {
             $this->ctx->content->text = $text;
         }
     }

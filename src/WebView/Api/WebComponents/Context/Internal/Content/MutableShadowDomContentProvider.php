@@ -18,7 +18,7 @@ final class MutableShadowDomContentProvider extends ShadowDomContentProvider imp
     public string $html {
         /** @phpstan-ignore-next-line PHPStan does not support property inheritance */
         get => parent::$html::get();
-        set(string|\Stringable $html) {
+        set(\Stringable|string $html) {
             $this->scripts->eval(\sprintf(
                 'this.shadowRoot.innerHTML = `%s`',
                 \addcslashes((string) $html, '`'),
@@ -29,7 +29,7 @@ final class MutableShadowDomContentProvider extends ShadowDomContentProvider imp
     public string $text {
         /** @phpstan-ignore-next-line PHPStan does not support property inheritance */
         get => parent::$text::get();
-        set(string|\Stringable $text) {
+        set(\Stringable|string $text) {
             $this->scripts->eval(\sprintf(
                 'this.shadowRoot.textContent = `%s`',
                 \addcslashes((string) $text, '`'),
