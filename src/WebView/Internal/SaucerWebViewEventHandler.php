@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Internal;
 
-use Boson\ApplicationPollerInterface;
 use Boson\Component\Http\Request;
 use Boson\Internal\Saucer\LibSaucer;
 use Boson\Internal\Saucer\SaucerPolicy;
@@ -23,6 +22,7 @@ use Boson\WebView\WebView;
 use Boson\WebView\WebViewState;
 use FFI\CData;
 use Psr\EventDispatcher\EventDispatcherInterface;
+use Revolt\EventLoop;
 
 /**
  * @internal this is an internal library class, please do not use it in your code
@@ -51,11 +51,6 @@ final class SaucerWebViewEventHandler
      */
     private readonly CData $handlers;
 
-    /**
-     * Contains application-aware poller instance.
-     */
-    private readonly ApplicationPollerInterface $poller;
-
     public function __construct(
         private readonly LibSaucer $api,
         private readonly WebView $webview,
@@ -65,8 +60,6 @@ final class SaucerWebViewEventHandler
          */
         private WebViewState &$state,
     ) {
-        $this->poller = $this->webview->window->app->poller;
-
         $this->handlers = $this->createEventHandlers();
 
         $this->listenEvents();
@@ -123,7 +116,9 @@ final class SaucerWebViewEventHandler
         try {
             return $this->onMessageReceived($message);
         } catch (\Throwable $e) {
-            $this->poller->fail($e);
+            EventLoop::defer(static function () use ($e) {
+                throw $e;
+            });
         }
 
         return true;
@@ -143,7 +138,9 @@ final class SaucerWebViewEventHandler
         try {
             $this->onDomReady($_);
         } catch (\Throwable $e) {
-            $this->poller->fail($e);
+            EventLoop::defer(static function () use ($e) {
+                throw $e;
+            });
         }
     }
 
@@ -155,7 +152,9 @@ final class SaucerWebViewEventHandler
                 url: Request::castUrl($url),
             ));
         } catch (\Throwable $e) {
-            $this->poller->fail($e);
+            EventLoop::defer(static function () use ($e) {
+                throw $e;
+            });
         }
     }
 
@@ -164,7 +163,9 @@ final class SaucerWebViewEventHandler
         try {
             $this->onNavigated($_, $url);
         } catch (\Throwable $e) {
-            $this->poller->fail($e);
+            EventLoop::defer(static function () use ($e) {
+                throw $e;
+            });
         }
     }
 
@@ -196,7 +197,9 @@ final class SaucerWebViewEventHandler
         try {
             return $this->onNavigating($_, $navigation);
         } catch (\Throwable $e) {
-            $this->poller->fail($e);
+            EventLoop::defer(static function () use ($e) {
+                throw $e;
+            });
 
             return SaucerPolicy::SAUCER_POLICY_BLOCK;
         }
@@ -223,7 +226,9 @@ final class SaucerWebViewEventHandler
         try {
             $this->onFaviconChanged($ptr, $icon);
         } catch (\Throwable $e) {
-            $this->poller->fail($e);
+            EventLoop::defer(static function () use ($e) {
+                throw $e;
+            });
         }
     }
 
@@ -247,7 +252,9 @@ final class SaucerWebViewEventHandler
         try {
             $this->onTitleChanged($ptr, $title);
         } catch (\Throwable $e) {
-            $this->poller->fail($e);
+            EventLoop::defer(static function () use ($e) {
+                throw $e;
+            });
         }
     }
 

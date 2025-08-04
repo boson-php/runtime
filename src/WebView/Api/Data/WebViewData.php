@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Data;
 
-use Boson\ApplicationPollerInterface;
 use Boson\Dispatcher\EventListener;
 use Boson\Internal\Saucer\LibSaucer;
 use Boson\Shared\IdValueGenerator\IdValueGeneratorInterface;
@@ -16,12 +15,12 @@ use Boson\WebView\Api\Data\Exception\WebViewIsNotReadyException;
 use Boson\WebView\Api\DataApiCreateInfo;
 use Boson\WebView\Api\DataApiInterface;
 use Boson\WebView\Api\WebViewExtension;
-use Boson\WebView\Internal\Timeout;
 use Boson\WebView\WebView;
 use Boson\WebView\WebViewState;
 use JetBrains\PhpStorm\Language;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
+use Revolt\EventLoop;
 
 use function React\Promise\resolve;
 
@@ -86,11 +85,6 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
      */
     private array $requests = [];
 
-    /**
-     * Application poller for handling timeouts.
-     */
-    private readonly ApplicationPollerInterface $poller;
-
     public function __construct(
         LibSaucer $api,
         WebView $context,
@@ -106,7 +100,6 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
         $this->timeout = $context->info->data->timeout;
         $this->callback = $context->info->data->callback;
         $this->failureCallback = $context->info->data->failureCallback;
-        $this->poller = $context->window->app->poller;
 
         $this->context->bind($this->callback, $this->onResponseReceived(...));
         $this->context->bind($this->failureCallback, $this->onFailureReceived(...));
@@ -157,35 +150,35 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
             throw WebViewIsNotReadyException::becauseWebViewIsNotReady($code);
         }
 
-        $result = WebViewRequestsResultStatus::Pending;
+        if ($this->context->window->app->isRunning === false) {
+            throw ApplicationNotRunningException::becauseApplicationNotRunning($code);
+        }
+
+        $suspension = EventLoop::getSuspension();
+
         $this->defer($code)
-            ->then(static function (mixed $input) use (&$result): mixed {
-                return $result = $input;
+            ->then(static function (mixed $input) use ($suspension): mixed {
+                $suspension->resume($input);
+
+                return $input;
             })
-            ->catch(static function (\Throwable $e) use (&$result): \Throwable {
-                return $result = $e;
+            ->catch(static function (\Throwable $e) use ($suspension): \Throwable {
+                $suspension->throw($e);
+
+                return $e;
             });
 
         $timeout ??= $this->timeout;
-        $timer = new Timeout();
 
-        while ($this->poller->next()) {
-            if ($result !== WebViewRequestsResultStatus::Pending) {
-                if ($result instanceof \Throwable) {
-                    throw $result;
-                }
-
-                return $result;
-            }
-
-            if (!$timer->isExceeded($timeout)) {
-                continue;
-            }
-
+        $delayId = EventLoop::delay($timeout, function () use ($code, $timeout): void {
             throw StalledRequestException::becauseRequestIsStalled($code, $timeout);
-        }
+        });
 
-        throw ApplicationNotRunningException::becauseApplicationNotRunning($code);
+        $result = $suspension->suspend();
+
+        EventLoop::cancel($delayId);
+
+        return $result;
     }
 
     /**

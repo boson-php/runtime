@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Schemes;
 
-use Boson\ApplicationPollerInterface;
 use Boson\Contracts\Http\RequestInterface;
 use Boson\Contracts\Http\ResponseInterface;
 use Boson\Dispatcher\EventListener;
@@ -18,14 +17,13 @@ use Boson\WebView\Api\WebViewExtension;
 use Boson\WebView\Internal\WebViewSchemeHandler\MimeTypeReader;
 use Boson\WebView\WebView;
 use FFI\CData;
+use Revolt\EventLoop;
 
 final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiInterface
 {
     public array $schemes;
 
     private readonly MimeTypeReader $mimeTypes;
-
-    private readonly ApplicationPollerInterface $poller;
 
     public function __construct(
         LibSaucer $api,
@@ -39,7 +37,6 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
         );
 
         $this->mimeTypes = new MimeTypeReader();
-        $this->poller = $context->window->app->poller;
         $this->schemes = $context->window->app->info->schemes;
 
         $this->createSchemeInterceptors(
@@ -70,7 +67,9 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
             $code = SaucerSchemeError::SAUCER_REQUEST_ERROR_FAILED;
             $this->api->saucer_scheme_executor_reject($executor, $code);
 
-            $this->poller->fail($e);
+            EventLoop::defer(static function () use ($e) {
+                throw $e;
+            });
 
             return;
         }
