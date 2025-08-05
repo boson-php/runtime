@@ -26,61 +26,61 @@ class TestingApplicationStub extends Application
     {
         $stub = new TestingSaucerStub();
 
-        $stub->addImplementation('cast', fn(string $t, CData $ptr) => $ptr);
-        $stub->addImplementation('new', $this->createStruct(...));
+        $stub->addDefaultMethod('cast', fn(string $t, CData $ptr) => $ptr);
+        $stub->addDefaultMethod('new', $this->createStruct(...));
 
-        $stub->addImplementation('saucer_options_new', fn(mixed ...$args): CData
+        $stub->addDefaultMethod('saucer_options_new', fn(mixed ...$args): CData
             => $this->createStruct('saucer_options_new', $args));
 
-        $stub->addImplementation('saucer_preferences_new', fn(mixed ...$args): CData
+        $stub->addDefaultMethod('saucer_preferences_new', fn(mixed ...$args): CData
             => $this->createStruct('saucer_preferences_new', $args));
 
-        $stub->addImplementation('saucer_desktop_new', fn(mixed ...$args): CData
+        $stub->addDefaultMethod('saucer_desktop_new', fn(mixed ...$args): CData
             => $this->createStruct('saucer_desktop_new', $args));
 
-        $stub->addImplementation('saucer_application_init', fn(mixed ...$args): CData
+        $stub->addDefaultMethod('saucer_application_init', fn(mixed ...$args): CData
             => $this->createStruct('saucer_application_init', $args));
 
-        $stub->addImplementation('saucer_new', fn(mixed ...$args): CData
+        $stub->addDefaultMethod('saucer_new', fn(mixed ...$args): CData
             => $this->createStruct('saucer_new', $args));
 
-        $stub->addImplementation('saucer_script_new', fn(mixed ...$args): CData
+        $stub->addDefaultMethod('saucer_script_new', fn(mixed ...$args): CData
             => $this->createStruct('saucer_script_new', $args));
 
-        $stub->addImplementation('saucer_preferences_set_persistent_cookies');
-        $stub->addImplementation('saucer_preferences_add_browser_flag');
+        $stub->addDefaultMethod('saucer_preferences_set_persistent_cookies');
+        $stub->addDefaultMethod('saucer_preferences_add_browser_flag');
 
-        $stub->addImplementation('saucer_application_run_once');
+        $stub->addDefaultMethod('saucer_application_run_once');
 
-        $stub->addImplementation('saucer_window_set_size');
-        $stub->addImplementation('saucer_window_set_decorations');
-        $stub->addImplementation('saucer_window_on');
-        $stub->addImplementation('saucer_window_show');
+        $stub->addDefaultMethod('saucer_window_set_size');
+        $stub->addDefaultMethod('saucer_window_set_decorations');
+        $stub->addDefaultMethod('saucer_window_on');
+        $stub->addDefaultMethod('saucer_window_show');
 
-        $stub->addImplementation('saucer_webview_set_context_menu');
-        $stub->addImplementation('saucer_webview_set_dev_tools');
-        $stub->addImplementation('saucer_webview_inject');
-        $stub->addImplementation('saucer_webview_on');
-        $stub->addImplementation('saucer_webview_on_message');
-        $stub->addImplementation('saucer_webview_background');
-        $stub->addImplementation('saucer_webview_force_dark_mode');
-        $stub->addImplementation('saucer_webview_set_background');
+        $stub->addDefaultMethod('saucer_webview_set_context_menu');
+        $stub->addDefaultMethod('saucer_webview_set_dev_tools');
+        $stub->addDefaultMethod('saucer_webview_inject');
+        $stub->addDefaultMethod('saucer_webview_on');
+        $stub->addDefaultMethod('saucer_webview_on_message');
+        $stub->addDefaultMethod('saucer_webview_background');
+        $stub->addDefaultMethod('saucer_webview_force_dark_mode');
+        $stub->addDefaultMethod('saucer_webview_set_background');
 
-        $stub->addImplementation('saucer_script_set_permanent');
+        $stub->addDefaultMethod('saucer_script_set_permanent');
 
         // cleanup
 
-        $stub->addImplementation('saucer_free');
-        $stub->addImplementation('saucer_desktop_free');
-        $stub->addImplementation('saucer_preferences_free');
-        $stub->addImplementation('saucer_options_free');
-        $stub->addImplementation('saucer_script_free');
-        $stub->addImplementation('saucer_application_free');
+        $stub->addDefaultMethod('saucer_free');
+        $stub->addDefaultMethod('saucer_desktop_free');
+        $stub->addDefaultMethod('saucer_preferences_free');
+        $stub->addDefaultMethod('saucer_options_free');
+        $stub->addDefaultMethod('saucer_script_free');
+        $stub->addDefaultMethod('saucer_application_free');
 
-        $stub->addImplementation('saucer_webview_clear_scripts');
-        $stub->addImplementation('saucer_webview_clear_embedded');
+        $stub->addDefaultMethod('saucer_webview_clear_scripts');
+        $stub->addDefaultMethod('saucer_webview_clear_embedded');
 
-        $stub->addImplementation('saucer_application_quit');
+        $stub->addDefaultMethod('saucer_application_quit');
 
         return $this->api = $stub;
     }

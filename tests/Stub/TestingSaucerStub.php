@@ -27,7 +27,7 @@ class TestingSaucerStub implements SaucerInterface
     /**
      * @param non-empty-string $method
      */
-    public function addMethod(string $method, ?callable $callable = null): void
+    public function onMethodCall(string $method, ?callable $callable = null): void
     {
         $this->methods[$method] = ($callable ?? function () {});
     }
@@ -35,7 +35,7 @@ class TestingSaucerStub implements SaucerInterface
     /**
      * @param non-empty-string $method
      */
-    public function addImplementation(string $method, ?callable $callable = null): void
+    public function addDefaultMethod(string $method, ?callable $callable = null): void
     {
         $this->implementations[$method] = ($callable ?? function () {});
     }
