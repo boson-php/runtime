@@ -5,35 +5,34 @@ declare(strict_types=1);
 namespace Boson\Api;
 
 use Boson\Contracts\EventListener\Subscription\CancellableSubscriptionInterface;
+use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\Event;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\Intention;
-use Boson\Internal\Saucer\LibSaucer;
-use Boson\WebView\WebView;
+use Boson\Internal\StructPointerId;
 use FFI\CData;
 
 /**
- * @template T of object
+ * @template T of IdentifiableInterface<StructPointerId>
  */
 abstract class Extension
 {
-    protected readonly CData $ptr;
+    protected StructPointerId $id {
+        /** @phpstan-ignore-next-line : Context is a "IdentifiableInterface<StructPointerId>" */
+        get => $this->context->id;
+    }
+
+    protected CData $ptr {
+        get => $this->id->ptr;
+    }
 
     public function __construct(
-        protected readonly LibSaucer $api,
         /**
          * @var T
          */
-        protected readonly object $context,
+        protected readonly IdentifiableInterface $context,
         private readonly EventListener $listener,
-    ) {
-        $this->ptr = $this->getHandle($this->context);
-    }
-
-    /**
-     * @param T $context
-     */
-    abstract protected function getHandle(object $context): CData;
+    ) {}
 
     /**
      * @template TArgEvent of object
@@ -49,7 +48,7 @@ abstract class Extension
     }
 
     /**
-     * @param Intention<WebView> $intention
+     * @param Intention<T> $intention
      */
     protected function intent(object $intention): bool
     {
@@ -59,7 +58,7 @@ abstract class Extension
     }
 
     /**
-     * @param Event<WebView> $event
+     * @param Event<T> $event
      */
     protected function dispatch(object $event): void
     {

@@ -12,7 +12,7 @@ use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
 use Boson\Exception\BosonException;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\WebView\Api\Battery\WebViewBattery;
 use Boson\WebView\Api\BatteryApiInterface;
@@ -31,7 +31,6 @@ use Boson\WebView\Api\WebComponents\Exception\ComponentAlreadyDefinedException;
 use Boson\WebView\Api\WebComponents\Exception\WebComponentsApiException;
 use Boson\WebView\Api\WebComponents\WebViewWebComponents;
 use Boson\WebView\Api\WebComponentsApiInterface;
-use Boson\WebView\Api\WebViewExtension;
 use Boson\WebView\Internal\SaucerWebViewEventHandler;
 use Boson\Window\Window;
 use Boson\Window\WindowId;
@@ -160,7 +159,7 @@ final class WebView implements
     public private(set) WebViewState $state = WebViewState::Loading;
 
     /**
-     * Contains an internal bridge between {@see LibSaucer} events system
+     * Contains an internal bridge between {@see SaucerInterface} events system
      * and the PSR {@see WebView::$events} dispatcher.
      *
      * @phpstan-ignore property.onlyWritten
@@ -186,7 +185,7 @@ final class WebView implements
         /**
          * Contains shared WebView API library.
          */
-        private readonly LibSaucer $api,
+        private readonly SaucerInterface $api,
         /**
          * Gets parent application window instance to which
          * this webview instance belongs.
@@ -203,14 +202,14 @@ final class WebView implements
         $this->listener = self::createEventListener($dispatcher);
 
         // Initialization of WebView's API
-        $this->scripts = $this->createWebViewExtension(WebViewScriptsSet::class);
-        $this->bindings = $this->createWebViewExtension(WebViewBindingsMap::class);
-        $this->data = $this->createWebViewExtension(WebViewData::class);
-        $this->security = $this->createWebViewExtension(WebViewSecurity::class);
-        $this->components = $this->createWebViewExtension(WebViewWebComponents::class);
-        $this->battery = $this->createWebViewExtension(WebViewBattery::class);
-        $this->schemes = $this->createWebViewExtension(WebViewSchemeHandler::class);
-        $this->handler = self::createWebViewEventHandler($api, $this, $this->listener, $this->state);
+        $this->scripts = new WebViewScriptsSet($api, $this, $this->listener);
+        $this->bindings = new WebViewBindingsMap($this, $this->listener);
+        $this->data = new WebViewData($this, $this->listener);
+        $this->security = new WebViewSecurity($this, $this->listener);
+        $this->components = new WebViewWebComponents($this, $this->listener);
+        $this->battery = new WebViewBattery($this, $this->listener);
+        $this->schemes = new WebViewSchemeHandler($api, $this, $this->listener);
+        $this->handler = new SaucerWebViewEventHandler($api, $this, $this->listener, $this->state);
 
         // Register WebView's subsystems
 
@@ -233,45 +232,6 @@ final class WebView implements
     private static function createEventListener(EventDispatcherInterface $dispatcher): EventListener
     {
         return new DelegateEventListener($dispatcher);
-    }
-
-    /**
-     * Creates a new instance of {@see SaucerWebViewEventHandler} that manages
-     * the webview's native event handling and bridges them to the Saucer's
-     * event system.
-     *
-     * This method initializes an event handler that translates native webview
-     * events (like DOM ready, navigation, title changes) into application
-     * events that can be handled by the event dispatcher.
-     */
-    private static function createWebViewEventHandler(
-        LibSaucer $api,
-        WebView $webview,
-        EventDispatcherInterface $dispatcher,
-        WebViewState &$state,
-    ): SaucerWebViewEventHandler {
-        return new SaucerWebViewEventHandler(
-            api: $api,
-            webview: $webview,
-            dispatcher: $dispatcher,
-            state: $state,
-        );
-    }
-
-    /**
-     * @template TArgApiProvider of WebViewExtension
-     *
-     * @param class-string<TArgApiProvider> $class
-     *
-     * @return TArgApiProvider
-     */
-    private function createWebViewExtension(string $class): WebViewExtension
-    {
-        return new $class(
-            api: $this->api,
-            context: $this,
-            listener: $this->listener,
-        );
     }
 
     /**

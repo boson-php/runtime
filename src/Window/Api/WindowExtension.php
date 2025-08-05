@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Boson\Window\Api;
 
 use Boson\Api\Extension;
+use Boson\Dispatcher\EventListener;
 use Boson\Window\Window;
-use FFI\CData;
 
 /**
  * @template-extends Extension<Window>
  */
 abstract class WindowExtension extends Extension
 {
-    protected function getHandle(object $context): CData
+    public function __construct(Window $context, EventListener $listener)
     {
-        return $context->id->ptr;
+        parent::__construct($context, $listener);
     }
 }

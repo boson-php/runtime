@@ -13,12 +13,10 @@ use Boson\Exception\Environment\UnsupportedOperatingSystemException;
 use FFI\Env\Runtime;
 
 /**
- * @mixin \FFI
- *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson
  */
-final readonly class LibSaucer
+final readonly class Saucer implements SaucerInterface
 {
     /**
      * @var non-empty-string
@@ -42,6 +40,8 @@ final readonly class LibSaucer
      */
     public function __construct(
         ?string $library = null,
+        private ?OperatingSystem $os = null,
+        private ?CentralProcessor $cpu = null,
     ) {
         Runtime::assertAvailable();
 
@@ -58,8 +58,8 @@ final readonly class LibSaucer
      */
     private function getLibrary(): string
     {
-        $os = OperatingSystem::createFromGlobals();
-        $cpu = CentralProcessor::createFromGlobals();
+        $os = $this->os ?? OperatingSystem::createFromGlobals();
+        $cpu = $this->cpu ?? CentralProcessor::createFromGlobals();
 
         $result = match (true) {
             $os->family->is(Family::Windows) => match ($cpu->arch) {

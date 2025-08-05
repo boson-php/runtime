@@ -5,16 +5,16 @@ declare(strict_types=1);
 namespace Boson\WebView\Api;
 
 use Boson\Api\Extension;
+use Boson\Dispatcher\EventListener;
 use Boson\WebView\WebView;
-use FFI\CData;
 
 /**
  * @template-extends Extension<WebView>
  */
 abstract class WebViewExtension extends Extension
 {
-    protected function getHandle(object $context): CData
+    public function __construct(WebView $context, EventListener $listener)
     {
-        return $context->id->ptr;
+        parent::__construct($context, $listener);
     }
 }

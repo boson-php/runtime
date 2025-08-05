@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Boson\Internal;
 
 use Boson\Contracts\Id\IntIdInterface;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use FFI\CData;
 
 /**
@@ -28,7 +28,7 @@ abstract readonly class StructPointerId implements IntIdInterface
      *
      * @api
      */
-    final protected static function getPointerIntValue(LibSaucer $api, CData $handle): int
+    final protected static function getPointerIntValue(SaucerInterface $api, CData $handle): int
     {
         // Cast any struct pointer (`<saucer_struct>*`)
         // to integer pointer (`intptr_t`) value.

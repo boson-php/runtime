@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Window;
 
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\StructPointerId;
 use FFI\CData;
 
@@ -16,7 +16,7 @@ final readonly class WindowId extends StructPointerId
      *
      * @api
      */
-    final public static function fromHandle(LibSaucer $api, CData $handle): self
+    final public static function fromHandle(SaucerInterface $api, CData $handle): self
     {
         $id = self::getPointerIntValue($api, $handle);
 

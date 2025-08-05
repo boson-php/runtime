@@ -10,7 +10,7 @@ use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Window\Event\WindowClosed;
 use Boson\Window\Event\WindowCreated;
 use Boson\Window\Event\WindowDestroyed;
@@ -64,7 +64,7 @@ final class WindowManager implements
     private readonly EventListener $listener;
 
     public function __construct(
-        private readonly LibSaucer $api,
+        private readonly SaucerInterface $api,
         private readonly Application $app,
         WindowCreateInfo $info,
         EventDispatcherInterface $dispatcher,

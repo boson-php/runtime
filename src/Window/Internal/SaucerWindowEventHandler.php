@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Window\Internal;
 
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\Saucer\SaucerPolicy;
 use Boson\Internal\Saucer\SaucerWindowEvent;
 use Boson\Internal\Window\CSaucerWindowEventsStruct;
@@ -48,7 +48,7 @@ final readonly class SaucerWindowEventHandler
     private CData $handlers;
 
     public function __construct(
-        private LibSaucer $api,
+        private SaucerInterface $api,
         private Window $window,
         private EventDispatcherInterface $dispatcher,
     ) {

@@ -10,7 +10,7 @@ use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\Saucer\SaucerWindowEdge;
 use Boson\Shared\Marker\RequiresDealloc;
 use Boson\WebView\Internal\WebViewCreateInfo\FlagsListFormatter;
@@ -440,7 +440,7 @@ final class Window implements
     public private(set) bool $isClosed = false;
 
     /**
-     * Contains an internal bridge between system {@see LibSaucer} events
+     * Contains an internal bridge between system {@see SaucerInterface} events
      * and the PSR {@see Window::$events} dispatcher.
      *
      * @phpstan-ignore property.onlyWritten
@@ -462,7 +462,7 @@ final class Window implements
         /**
          * Contains shared WebView API library.
          */
-        private readonly LibSaucer $api,
+        private readonly SaucerInterface $api,
         /**
          * Gets parent application instance to which this window belongs.
          */
@@ -521,7 +521,7 @@ final class Window implements
      * size through this interface will be reflected in the actual
      * window dimensions.
      */
-    private static function createWindowSize(LibSaucer $api, WindowId $id): MutableSizeInterface
+    private static function createWindowSize(SaucerInterface $api, WindowId $id): MutableSizeInterface
     {
         return new ManagedWindowSize($api, $id->ptr);
     }
@@ -536,7 +536,7 @@ final class Window implements
      * changes to the bounds through this interface will be reflected in the
      * actual window constraints.
      */
-    private static function createWindowMinSize(LibSaucer $api, WindowId $id): MutableSizeInterface
+    private static function createWindowMinSize(SaucerInterface $api, WindowId $id): MutableSizeInterface
     {
         return new ManagedWindowMinBounds($api, $id->ptr);
     }
@@ -551,27 +551,9 @@ final class Window implements
      * changes to the bounds through this interface will be reflected in the
      * actual window constraints.
      */
-    private static function createWindowMaxSize(LibSaucer $api, WindowId $id): MutableSizeInterface
+    private static function createWindowMaxSize(SaucerInterface $api, WindowId $id): MutableSizeInterface
     {
         return new ManagedWindowMaxBounds($api, $id->ptr);
-    }
-
-    /**
-     * @template TArgApiProvider of WindowExtension
-     *
-     * @param class-string<TArgApiProvider> $class
-     *
-     * @return TArgApiProvider
-     *
-     * @phpstan-ignore-next-line TODO will be used later
-     */
-    private function createWindowExtension(string $class): WindowExtension
-    {
-        return new $class(
-            api: $this->api,
-            context: $this,
-            listener: $this->listener,
-        );
     }
 
     /**
@@ -581,7 +563,7 @@ final class Window implements
      * that is responsible for managing window's webview.
      */
     private static function createWebView(
-        LibSaucer $api,
+        SaucerInterface $api,
         Window $window,
         WindowCreateInfo $info,
         EventDispatcherInterface $dispatcher,
@@ -604,7 +586,7 @@ final class Window implements
      * handled by the event dispatcher.
      */
     private static function createSaucerWindowEventHandler(
-        LibSaucer $api,
+        SaucerInterface $api,
         Window $window,
         EventDispatcherInterface $dispatcher,
     ): SaucerWindowEventHandler {
@@ -623,7 +605,7 @@ final class Window implements
     /**
      * Creates new window ID and internal handle
      */
-    private static function createWindowId(LibSaucer $api, Application $app, WindowCreateInfo $info): WindowId
+    private static function createWindowId(SaucerInterface $api, Application $app, WindowCreateInfo $info): WindowId
     {
         return WindowId::fromHandle(
             api: $api,
@@ -646,7 +628,7 @@ final class Window implements
     }
 
     #[RequiresDealloc]
-    private static function createWindowPointer(LibSaucer $api, Application $app, WindowCreateInfo $info): CData
+    private static function createWindowPointer(SaucerInterface $api, Application $app, WindowCreateInfo $info): CData
     {
         $preferences = self::createPreferencesPointer($api, $app, $info);
 
@@ -704,7 +686,7 @@ final class Window implements
     }
 
     #[RequiresDealloc]
-    private static function createPreferencesPointer(LibSaucer $api, Application $app, WindowCreateInfo $info): CData
+    private static function createPreferencesPointer(SaucerInterface $api, Application $app, WindowCreateInfo $info): CData
     {
         $preferences = $api->saucer_preferences_new($app->id->ptr);
 

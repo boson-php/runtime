@@ -5,15 +5,15 @@ declare(strict_types=1);
 namespace Boson\Api;
 
 use Boson\Application;
-use FFI\CData;
+use Boson\Dispatcher\EventListener;
 
 /**
  * @template-extends Extension<Application>
  */
 abstract class ApplicationExtension extends Extension
 {
-    protected function getHandle(object $context): CData
+    public function __construct(Application $context, EventListener $listener)
     {
-        return $context->id->ptr;
+        parent::__construct($context, $listener);
     }
 }

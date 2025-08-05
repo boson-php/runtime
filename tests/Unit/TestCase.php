@@ -8,15 +8,4 @@ use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 
 #[Group('boson-php/runtime')]
-abstract class TestCase extends BaseTestCase
-{
-    protected function setUp(): void
-    {
-        parent::setUp();
-    }
-
-    protected function tearDown(): void
-    {
-        parent::tearDown();
-    }
-}
+abstract class TestCase extends BaseTestCase {}

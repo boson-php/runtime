@@ -9,7 +9,7 @@ use Boson\Contracts\Http\Component\HeadersInterface;
 use Boson\Contracts\Http\Component\MethodInterface;
 use Boson\Contracts\Http\RequestInterface;
 use Boson\Contracts\Uri\UriInterface;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use FFI\CData;
 
 /**
@@ -35,7 +35,7 @@ final class LazyInitializedRequest implements RequestInterface
     }
 
     public function __construct(
-        private readonly LibSaucer $api,
+        private readonly SaucerInterface $api,
         private readonly CData $ptr,
     ) {}
 

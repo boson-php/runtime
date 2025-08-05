@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Boson\WebView\Api\Scripts;
 
 use Boson\Contracts\Id\IdentifiableInterface;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use JetBrains\PhpStorm\Language;
 
 final readonly class LoadedScript implements
@@ -13,7 +13,7 @@ final readonly class LoadedScript implements
     \Stringable
 {
     public function __construct(
-        private LibSaucer $api,
+        private SaucerInterface $api,
         public LoadedScriptId $id,
         #[Language('JavaScript')]
         public string $code,

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Boson\WebView\Api\Battery;
 
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Shared\Marker\ExpectsSecurityContext;
 use Boson\WebView\Api\Battery\Event\BatteryChargingStateChanged;
 use Boson\WebView\Api\Battery\Event\BatteryChargingTimeChanged;
@@ -69,9 +69,9 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
      */
     private readonly bool $isEventsEnabled;
 
-    public function __construct(LibSaucer $api, WebView $context, EventListener $listener)
+    public function __construct(WebView $context, EventListener $listener)
     {
-        parent::__construct($api, $context, $listener);
+        parent::__construct($context, $listener);
 
         $this->isEventsEnabled = $this->context->info->battery->enableEvents;
 

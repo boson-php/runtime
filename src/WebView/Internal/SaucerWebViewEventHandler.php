@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Boson\WebView\Internal;
 
 use Boson\Component\Http\Request;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\Saucer\SaucerPolicy;
 use Boson\Internal\Saucer\SaucerState;
 use Boson\Internal\Saucer\SaucerWebEvent as Event;
@@ -33,7 +33,7 @@ final class SaucerWebViewEventHandler
     /**
      * @var non-empty-string
      */
-    private const string HANDLER_STRUCT = <<<'CDATA'
+    private const string WEBVIEW_HANDLER_STRUCT = <<<'CDATA'
         struct {
             void (*onDomReady)(const saucer_handle *);
             void (*onNavigated)(const saucer_handle *, const char *);
@@ -52,7 +52,7 @@ final class SaucerWebViewEventHandler
     private readonly CData $handlers;
 
     public function __construct(
-        private readonly LibSaucer $api,
+        private readonly SaucerInterface $api,
         private readonly WebView $webview,
         private readonly EventDispatcherInterface $dispatcher,
         /**
@@ -72,7 +72,7 @@ final class SaucerWebViewEventHandler
 
     private function createEventHandlers(): CData
     {
-        $struct = $this->api->new(self::HANDLER_STRUCT);
+        $struct = $this->api->new(self::WEBVIEW_HANDLER_STRUCT);
 
         $struct->onDomReady = $this->onSafeDomReady(...);
         $struct->onNavigated = $this->onSafeNavigated(...);

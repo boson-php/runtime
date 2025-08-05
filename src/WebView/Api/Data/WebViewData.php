@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Boson\WebView\Api\Data;
 
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Shared\IdValueGenerator\IdValueGeneratorInterface;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\WebView\Api\Data\Exception\ApplicationNotRunningException;
@@ -85,16 +85,9 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
      */
     private array $requests = [];
 
-    public function __construct(
-        LibSaucer $api,
-        WebView $context,
-        EventListener $listener,
-    ) {
-        parent::__construct(
-            api: $api,
-            context: $context,
-            listener: $listener,
-        );
+    public function __construct(WebView $context, EventListener $listener)
+    {
+        parent::__construct($context, $listener);
 
         $this->ids = $context->info->data->ids;
         $this->timeout = $context->info->data->timeout;

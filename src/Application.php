@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Boson;
 
-use Boson\Api\ApplicationExtension;
 use Boson\Api\Dialog\ApplicationDialog;
 use Boson\Api\DialogApiInterface;
 use Boson\Contracts\EventListener\EventListenerInterface;
@@ -24,7 +23,8 @@ use Boson\Internal\DeferRunner\NativeShutdownFunctionRunner;
 use Boson\Internal\QuitHandler\PcntlQuitHandler;
 use Boson\Internal\QuitHandler\QuitHandlerInterface;
 use Boson\Internal\QuitHandler\WindowsQuitHandler;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\Saucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\ThreadsCountResolver;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\Shared\Marker\RequiresDealloc;
@@ -39,7 +39,7 @@ use Revolt\EventLoop;
 /**
  * @template-implements IdentifiableInterface<ApplicationId>
  */
-final class Application implements
+class Application implements
     IdentifiableInterface,
     EventListenerInterface
 {
@@ -72,11 +72,6 @@ final class Application implements
      * Gets windows list and methods for working with windows.
      */
     public readonly WindowManager $windows;
-
-    /**
-     * Application-aware event listener & dispatcher.
-     */
-    private readonly EventListener $listener;
 
     /**
      * Gets access to the Dialog API of the application.
@@ -147,7 +142,12 @@ final class Application implements
      * @internal Not safe, you can get segfault, use
      *           this low-level API at your own risk!
      */
-    public readonly LibSaucer $api;
+    private readonly SaucerInterface $api;
+
+    /**
+     * Application-aware event listener & dispatcher.
+     */
+    private readonly EventListener $listener;
 
     /**
      * @param EventDispatcherInterface|null $dispatcher an optional event
@@ -181,14 +181,14 @@ final class Application implements
         ],
     ) {
         // Initialization Application's fields and properties
-        $this->api = self::createLibSaucer($info->library);
-        $this->isDebug = self::createIsDebugParameter($info->debug);
-        $this->listener = self::createEventListener($dispatcher);
-        $this->id = self::createApplicationId($this->api, $this->info->name, $this->info->threads);
-        $this->windows = self::createWindowManager($this->api, $this, $info, $this->listener);
+        $this->api = $this->createLibSaucer($info->library);
+        $this->isDebug = $this->createIsDebugParameter($info->debug);
+        $this->listener = $this->createEventListener($dispatcher);
+        $this->id = $this->createApplicationId($this->api, $this->info->name, $this->info->threads);
+        $this->windows = $this->createWindowManager($this->api, $this, $info, $this->listener);
 
         // Initialization of Application's API
-        $this->dialog = $this->createApplicationExtension(ApplicationDialog::class);
+        $this->dialog = new ApplicationDialog($this->api, $this, $this->listener);
 
         // Register Application's subsystems
         $this->registerSchemes();
@@ -201,7 +201,7 @@ final class Application implements
     }
 
     /**
-     * Creates a new instance of {@see LibSaucer} that provides access to the
+     * Creates a new instance of {@see SaucerInterface} that provides access to the
      * native WebView API library. The returned object allows interacting with
      * the underlying WebView (Saucer) functionality through FFI bindings.
      *
@@ -212,9 +212,9 @@ final class Application implements
      *
      * @param non-empty-string|null $library Optional path to the WebView library
      */
-    private static function createLibSaucer(?string $library): LibSaucer
+    protected function createLibSaucer(?string $library): SaucerInterface
     {
-        return new LibSaucer($library);
+        return new Saucer($library);
     }
 
     /**
@@ -225,7 +225,7 @@ final class Application implements
      * state, taking into account both explicit configuration and automatic
      * environment detection.
      */
-    private static function createIsDebugParameter(?bool $debug): bool
+    protected function createIsDebugParameter(?bool $debug): bool
     {
         if ($debug === null) {
             $debug = false;
@@ -239,22 +239,6 @@ final class Application implements
         }
 
         return $debug;
-    }
-
-    /**
-     * @template TArgApiProvider of ApplicationExtension
-     *
-     * @param class-string<TArgApiProvider> $class
-     *
-     * @return TArgApiProvider
-     */
-    private function createApplicationExtension(string $class): ApplicationExtension
-    {
-        return new $class(
-            api: $this->api,
-            context: $this,
-            listener: $this->listener,
-        );
     }
 
     /**
@@ -273,8 +257,8 @@ final class Application implements
      * This method initializes and returns a {@see WindowManager} object
      * that is responsible for managing all application windows.
      */
-    private static function createWindowManager(
-        LibSaucer $api,
+    protected function createWindowManager(
+        SaucerInterface $api,
         Application $app,
         ApplicationCreateInfo $info,
         EventDispatcherInterface $dispatcher,
@@ -337,7 +321,7 @@ final class Application implements
      * Creates local (application-aware) event listener
      * based on the provided dispatcher.
      */
-    private static function createEventListener(?EventDispatcherInterface $dispatcher): EventListener
+    protected function createEventListener(?EventDispatcherInterface $dispatcher): EventListener
     {
         if ($dispatcher === null) {
             return new EventListener();
@@ -352,11 +336,11 @@ final class Application implements
      * @param non-empty-string $name
      * @param int<1, max>|null $threads
      */
-    private static function createApplicationId(LibSaucer $api, string $name, ?int $threads): ApplicationId
+    protected function createApplicationId(SaucerInterface $api, string $name, ?int $threads): ApplicationId
     {
         return ApplicationId::fromAppHandle(
             api: $api,
-            handle: self::createApplicationPointer($api, $name, $threads),
+            handle: $this->createApplicationPointer($api, $name, $threads),
             name: $name,
         );
     }
@@ -368,9 +352,9 @@ final class Application implements
      * @param int<1, max>|null $threads
      */
     #[RequiresDealloc]
-    private static function createApplicationPointer(LibSaucer $api, string $name, ?int $threads): CData
+    protected function createApplicationPointer(SaucerInterface $api, string $name, ?int $threads): CData
     {
-        $options = self::createApplicationOptionsPointer($api, $name, $threads);
+        $options = $this->createApplicationOptionsPointer($api, $name, $threads);
 
         try {
             return $api->saucer_application_init($options);
@@ -386,7 +370,7 @@ final class Application implements
      * @param int<1, max>|null $threads
      */
     #[RequiresDealloc]
-    private static function createApplicationOptionsPointer(LibSaucer $api, string $name, ?int $threads): CData
+    protected function createApplicationOptionsPointer(SaucerInterface $api, string $name, ?int $threads): CData
     {
         $options = $api->saucer_options_new($name);
 

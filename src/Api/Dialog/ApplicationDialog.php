@@ -7,6 +7,8 @@ namespace Boson\Api\Dialog;
 use Boson\Api\ApplicationExtension;
 use Boson\Api\DialogApiInterface;
 use Boson\Application;
+use Boson\Dispatcher\EventListener;
+use Boson\Internal\Saucer\SaucerInterface;
 use FFI\CData;
 
 /**
@@ -15,6 +17,19 @@ use FFI\CData;
  */
 final class ApplicationDialog extends ApplicationExtension implements DialogApiInterface
 {
+    protected CData $ptr {
+        /** @phpstan-ignore-next-line : PHPStan does not support property inheritance */
+        get => $this->api->saucer_desktop_new(parent::$ptr::get());
+    }
+
+    public function __construct(
+        private readonly SaucerInterface $api,
+        Application $application,
+        EventListener $listener,
+    ) {
+        parent::__construct($application, $listener);
+    }
+
     private function applyDirectory(CData $options, ?string $directory): void
     {
         $directory ??= \getcwd();
@@ -147,17 +162,6 @@ final class ApplicationDialog extends ApplicationExtension implements DialogApiI
     public function selectDirectories(?string $directory = null, iterable $filter = []): array
     {
         return $this->selectMany($directory, $filter, $this->api->saucer_desktop_pick_folders(...));
-    }
-
-    /**
-     * @param Application $context
-     */
-    #[\Override]
-    protected function getHandle(object $context): CData
-    {
-        return $this->api->saucer_desktop_new(
-            $context->id->ptr,
-        );
     }
 
     public function __destruct()

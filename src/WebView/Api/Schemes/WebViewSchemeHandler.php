@@ -7,7 +7,7 @@ namespace Boson\WebView\Api\Schemes;
 use Boson\Contracts\Http\RequestInterface;
 use Boson\Contracts\Http\ResponseInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\Saucer\SaucerLaunch;
 use Boson\Internal\Saucer\SaucerSchemeError;
 use Boson\Shared\Marker\RequiresDealloc;
@@ -26,15 +26,11 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
     private readonly MimeTypeReader $mimeTypes;
 
     public function __construct(
-        LibSaucer $api,
+        private readonly SaucerInterface $api,
         WebView $context,
         EventListener $listener,
     ) {
-        parent::__construct(
-            api: $api,
-            context: $context,
-            listener: $listener,
-        );
+        parent::__construct($context, $listener);
 
         $this->mimeTypes = new MimeTypeReader();
         $this->schemes = $context->window->app->info->schemes;

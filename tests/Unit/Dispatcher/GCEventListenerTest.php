@@ -6,10 +6,10 @@ namespace Boson\Tests\Unit\Dispatcher;
 
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
-use Boson\Tests\Unit\Dispatcher\Stub\EventListenerContainerStub;
+use Boson\Tests\Unit\Dispatcher\Stub\TestingEventListenerContainerStub;
 use PHPUnit\Framework\Attributes\Group;
 
-#[Group('dispatcher')]
+#[Group('boson-php/runtime')]
 final class GCEventListenerTest extends DispatcherTestCase
 {
     public function testMemoryFreedAfterDisposeDispatcher(): void
@@ -70,7 +70,7 @@ final class GCEventListenerTest extends DispatcherTestCase
 
         $reference = \WeakReference::create($callback);
 
-        $container = new EventListenerContainerStub($listener);
+        $container = new TestingEventListenerContainerStub($listener);
         $container->addEventListener(self::class, $callback);
 
         return [$container, $reference];

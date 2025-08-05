@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Window\Internal\Size;
 
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Window\MutableSizeInterface;
 use Boson\Window\Size\SizeStringableImpl;
 use FFI\CData;
@@ -52,7 +52,7 @@ abstract class ManagedSize implements MutableSizeInterface
     private readonly CData $unmanagedHeightValue;
 
     public function __construct(
-        protected readonly LibSaucer $api,
+        protected readonly SaucerInterface $api,
         protected readonly CData $handle,
     ) {
         $this->unmanagedWidthValue = $this->api->new('int');

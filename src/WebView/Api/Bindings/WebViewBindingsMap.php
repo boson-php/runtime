@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Boson\WebView\Api\Bindings;
 
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\LibSaucer;
+use Boson\Internal\Saucer\SaucerInterface;
 use Boson\WebView\Api\Bindings\Exception\FunctionAlreadyDefinedException;
 use Boson\WebView\Api\Bindings\Exception\InvalidFunctionException;
 use Boson\WebView\Api\BindingsApiCreateInfo;
@@ -51,16 +51,9 @@ final class WebViewBindingsMap extends WebViewExtension implements
      */
     private array $functions = [];
 
-    public function __construct(
-        LibSaucer $api,
-        WebView $context,
-        EventListener $listener,
-    ) {
-        parent::__construct(
-            api: $api,
-            context: $context,
-            listener: $listener,
-        );
+    public function __construct(WebView $context, EventListener $listener)
+    {
+        parent::__construct($context, $listener);
 
         $this->packer = new WebViewContextPacker(
             delimiter: $context->info->bindings->functionDelimiter,

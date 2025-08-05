@@ -10,7 +10,7 @@ use Boson\Contracts\EventListener\Subscription\SubscriptionInterface;
 use Boson\Dispatcher\EventListener;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
-final readonly class EventListenerContainerStub implements
+final readonly class TestingEventListenerContainerStub implements
     EventListenerInterface,
     EventDispatcherInterface
 {
