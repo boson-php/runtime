@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace Boson;
 
+use Boson\Api\CentralProcessor\ApplicationCentralProcessor;
+use Boson\Api\CentralProcessorApiInterface;
 use Boson\Api\Dialog\ApplicationDialog;
 use Boson\Api\DialogApiInterface;
+use Boson\Api\OperatingSystem\ApplicationOperatingSystem;
+use Boson\Api\OperatingSystemApiInterface;
+use Boson\Component\CpuInfo\ArchitectureInterface;
+use Boson\Component\OsInfo\FamilyInterface;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\DelegateEventListener;
@@ -77,6 +83,16 @@ class Application implements
      * Gets access to the Dialog API of the application.
      */
     public readonly DialogApiInterface $dialog;
+
+    /**
+     * Gets access to the CPU Information API of the application.
+     */
+    public readonly CentralProcessorApiInterface $cpu;
+
+    /**
+     * Gets access to the OS Information API of the application.
+     */
+    public readonly OperatingSystemApiInterface $os;
 
     /**
      * Provides more convenient and faster access to the
@@ -181,9 +197,15 @@ class Application implements
         ],
     ) {
         // Initialization Application's fields and properties
-        $this->api = $this->createLibSaucer($info->library);
         $this->isDebug = $this->createIsDebugParameter($info->debug);
         $this->listener = $this->createEventListener($dispatcher);
+
+        // Initialization of Software Application's API
+        $this->cpu = new ApplicationCentralProcessor($this, $this->listener);
+        $this->os = new ApplicationOperatingSystem($this, $this->listener);
+
+        // Kernel initialization
+        $this->api = $this->createLibSaucer($info->library, $this->os->family, $this->cpu->arch);
         $this->id = $this->createApplicationId($this->api, $this->info->name, $this->info->threads);
         $this->windows = $this->createWindowManager($this->api, $this, $info, $this->listener);
 
@@ -212,9 +234,12 @@ class Application implements
      *
      * @param non-empty-string|null $library Optional path to the WebView library
      */
-    protected function createLibSaucer(?string $library): SaucerInterface
-    {
-        return new Saucer($library);
+    protected function createLibSaucer(
+        ?string $library,
+        FamilyInterface $os,
+        ArchitectureInterface $cpu,
+    ): SaucerInterface {
+        return new Saucer($library, $os, $cpu);
     }
 
     /**
@@ -512,6 +537,7 @@ class Application implements
             return;
         }
 
+        $this->wasEverRunning = true;
         $this->isRunning = false;
         $this->api->saucer_application_quit($this->id->ptr);
 
