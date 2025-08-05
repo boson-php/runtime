@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Boson\WebView\Api\Data;
 
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Shared\IdValueGenerator\IdValueGeneratorInterface;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\WebView\Api\Data\Exception\ApplicationNotRunningException;

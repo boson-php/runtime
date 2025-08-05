@@ -15,7 +15,6 @@ use Boson\Internal\Saucer\SaucerWindowEdge;
 use Boson\Shared\Marker\RequiresDealloc;
 use Boson\WebView\Internal\WebViewCreateInfo\FlagsListFormatter;
 use Boson\WebView\WebView;
-use Boson\Window\Api\WindowExtension;
 use Boson\Window\Event\WindowDecorationChanged;
 use Boson\Window\Event\WindowMaximized;
 use Boson\Window\Event\WindowMinimized;

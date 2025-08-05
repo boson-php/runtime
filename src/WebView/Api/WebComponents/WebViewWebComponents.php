@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Boson\WebView\Api\WebComponents;
 
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\WebView\Api\WebComponents\Component\HasAttributesInterface;
 use Boson\WebView\Api\WebComponents\Component\HasClassNameInterface;
 use Boson\WebView\Api\WebComponents\Component\HasMethodsInterface;

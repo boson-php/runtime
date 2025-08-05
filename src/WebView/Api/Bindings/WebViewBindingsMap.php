@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Boson\WebView\Api\Bindings;
 
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\WebView\Api\Bindings\Exception\FunctionAlreadyDefinedException;
 use Boson\WebView\Api\Bindings\Exception\InvalidFunctionException;
 use Boson\WebView\Api\BindingsApiCreateInfo;
