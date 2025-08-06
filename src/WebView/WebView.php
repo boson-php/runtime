@@ -21,6 +21,8 @@ use Boson\WebView\Api\Bindings\WebViewBindingsMap;
 use Boson\WebView\Api\BindingsApiInterface;
 use Boson\WebView\Api\Data\WebViewData;
 use Boson\WebView\Api\DataApiInterface;
+use Boson\WebView\Api\Network\WebViewNetwork;
+use Boson\WebView\Api\NetworkApiInterface;
 use Boson\WebView\Api\Schemes\WebViewSchemeHandler;
 use Boson\WebView\Api\SchemesApiInterface;
 use Boson\WebView\Api\Scripts\WebViewScriptsSet;
@@ -102,6 +104,11 @@ final class WebView implements
      * Gets access to the Battery API of the webview.
      */
     public readonly BatteryApiInterface $battery;
+
+    /**
+     * Gets access to the Network API of the webview.
+     */
+    public readonly NetworkApiInterface $network;
 
     /**
      * Gets access to the Schemes API of the webview.
@@ -208,6 +215,7 @@ final class WebView implements
         $this->security = new WebViewSecurity($this, $this->listener);
         $this->components = new WebViewWebComponents($this, $this->listener);
         $this->battery = new WebViewBattery($this, $this->listener);
+        $this->network = new WebViewNetwork($this, $this->listener);
         $this->schemes = new WebViewSchemeHandler($api, $this, $this->listener);
         $this->handler = new SaucerWebViewEventHandler($api, $this, $this->listener, $this->state);
 

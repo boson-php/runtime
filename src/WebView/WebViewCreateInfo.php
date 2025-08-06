@@ -8,6 +8,7 @@ use Boson\Application;
 use Boson\WebView\Api\BatteryApiCreateInfo;
 use Boson\WebView\Api\BindingsApiCreateInfo;
 use Boson\WebView\Api\DataApiCreateInfo;
+use Boson\WebView\Api\NetworkApiCreateInfo;
 use Boson\WebView\Api\WebComponentsCreateInfo;
 use Boson\WebView\Internal\WebViewCreateInfo\StorageDirectoryResolver;
 
@@ -116,6 +117,10 @@ final readonly class WebViewCreateInfo
          * Contains Battery API configuration options.
          */
         public BatteryApiCreateInfo $battery = new BatteryApiCreateInfo(),
+        /**
+         * Contains Network API configuration options.
+         */
+        public NetworkApiCreateInfo $network = new NetworkApiCreateInfo(),
         /**
          * Contains Bindings API configuration options.
          */

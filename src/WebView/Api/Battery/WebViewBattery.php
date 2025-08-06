@@ -25,6 +25,9 @@ use Boson\WebView\WebView;
  *     chargingTime: float|int<0, max>,
  *     dischargingTime: float|int<0, max>|null,
  * }
+ *
+ * @internal this is an internal library class, please do not use it in your code
+ * @psalm-internal Boson\WebView
  */
 #[ExpectsSecurityContext]
 final class WebViewBattery extends WebViewExtension implements BatteryApiInterface
@@ -57,9 +60,9 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
      */
     private ?array $data = null {
         get => match (true) {
-            $this->data === null => $this->data = $this->get(),
+            $this->data === null => $this->data = $this->fetchClientInfo(),
             $this->isEventsEnabled => $this->data,
-            default => $this->get(),
+            default => $this->fetchClientInfo(),
         };
     }
 
@@ -103,7 +106,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
 
     private function onLevelChange(): void
     {
-        $this->flushState();
+        $this->flushClientInfo();
 
         $this->dispatch(new BatteryLevelChanged(
             subject: $this->context,
@@ -113,7 +116,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
 
     private function onChargingChange(): void
     {
-        $this->flushState();
+        $this->flushClientInfo();
 
         $this->dispatch(new BatteryChargingStateChanged(
             subject: $this->context,
@@ -123,7 +126,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
 
     private function onChargingTimeChange(): void
     {
-        $this->flushState();
+        $this->flushClientInfo();
 
         $this->dispatch(new BatteryChargingTimeChanged(
             subject: $this->context,
@@ -133,7 +136,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
 
     private function onDischargingTimeChange(): void
     {
-        $this->flushState();
+        $this->flushClientInfo();
 
         $this->dispatch(new BatteryDischargingTimeChanged(
             subject: $this->context,
@@ -141,7 +144,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
         ));
     }
 
-    private function flushState(): void
+    private function flushClientInfo(): void
     {
         $this->data = null;
     }
@@ -149,7 +152,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
     /**
      * @return BatteryInfoType
      */
-    private function get(): array
+    private function fetchClientInfo(): array
     {
         if (!$this->context->security->isSecureContext) {
             throw InsecureBatteryContextException::becauseContextIsInsecure();
