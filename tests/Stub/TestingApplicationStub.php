@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Boson\Tests\Stub;
 
 use Boson\Application;
+use Boson\Component\CpuInfo\ArchitectureInterface;
+use Boson\Component\OsInfo\FamilyInterface;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\WebView\Internal\SaucerWebViewEventHandler;
 use Boson\Window\Internal\SaucerWindowEventHandler;
@@ -22,8 +24,11 @@ class TestingApplicationStub extends Application
     public readonly TestingSaucerStub $api;
 
     #[\Override]
-    protected function createLibSaucer(?string $library): TestingSaucerStub
-    {
+    protected function createLibSaucer(
+        ?string $library,
+        FamilyInterface $os,
+        ArchitectureInterface $cpu,
+    ): TestingSaucerStub {
         $stub = new TestingSaucerStub();
 
         $stub->addDefaultMethod('cast', fn(string $t, CData $ptr) => $ptr);
