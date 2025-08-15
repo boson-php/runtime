@@ -32,6 +32,9 @@ final class SaucerPoller implements PollerInterface
 
     private TaskType $type = TaskType::Internal;
 
+    /**
+     * @var IdValueGeneratorInterface<array-key>
+     */
     private readonly IdValueGeneratorInterface $ids;
 
     private readonly CData $ptr;
@@ -40,8 +43,16 @@ final class SaucerPoller implements PollerInterface
         private readonly ApplicationId $id,
         private readonly SaucerInterface $saucer,
     ) {
-        $this->ids = new PlatformDependentIntValueGenerator();
+        $this->ids = $this->createIdValueGenerator();
         $this->ptr = $this->id->ptr;
+    }
+
+    /**
+     * @return IdValueGeneratorInterface<array-key>
+     */
+    private function createIdValueGenerator(): IdValueGeneratorInterface
+    {
+        return new PlatformDependentIntValueGenerator();
     }
 
     public function createSuspension(): Suspension

@@ -30,9 +30,6 @@ final class Suspension implements SuspensionInterface
 
     public function reject(\Throwable $error): void
     {
-        $this->isResolved = true;
-        $this->result = $error;
-
         $this->parent->defer(function () use ($error): never {
             throw $error;
         });

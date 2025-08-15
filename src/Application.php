@@ -516,6 +516,7 @@ class Application implements
 
         $this->listener->dispatch(new ApplicationStarted($this));
 
+        /** @phpstan-ignore while.alwaysTrue */
         while ($this->isRunning) {
             $this->poller->next();
         }
