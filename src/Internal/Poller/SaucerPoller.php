@@ -7,6 +7,7 @@ namespace Boson\Internal\Poller;
 use Boson\ApplicationId;
 use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Poller\PollerInterface;
+use Boson\Poller\Suspension;
 use Boson\Shared\IdValueGenerator\IdValueGeneratorInterface;
 use Boson\Shared\IdValueGenerator\PlatformDependentIntValueGenerator;
 use FFI\CData;
@@ -41,6 +42,11 @@ final class SaucerPoller implements PollerInterface
     ) {
         $this->ids = new PlatformDependentIntValueGenerator();
         $this->ptr = $this->id->ptr;
+    }
+
+    public function createSuspension(): Suspension
+    {
+        return new Suspension($this);
     }
 
     public function next(): void
@@ -105,7 +111,7 @@ final class SaucerPoller implements PollerInterface
     {
         $stopsAfter = \microtime(true) + $delay;
 
-        return $this->repeat(function (string $taskId) use ($stopsAfter, $task): void {
+        return $this->repeat(function (string|int $taskId) use ($stopsAfter, $task): void {
             if (\microtime(true) > $stopsAfter) {
                 $task($taskId);
 
@@ -116,6 +122,6 @@ final class SaucerPoller implements PollerInterface
 
     public function cancel(int|string $taskId): void
     {
-        unset($this->queueTasks[$taskId]);
+        unset($this->periodicTasks[$taskId], $this->queueTasks[$taskId]);
     }
 }

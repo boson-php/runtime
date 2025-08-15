@@ -12,6 +12,12 @@ interface PollerInterface
     public function next(): void;
 
     /**
+     * Returns an object used to suspend and resume
+     * execution of the current process.
+     */
+    public function createSuspension(): SuspensionInterface;
+
+    /**
      * Defer the execution of a callback.
      *
      * @template TArgTaskId of array-key

@@ -145,36 +145,33 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
             throw ApplicationNotRunningException::becauseApplicationNotRunning($code);
         }
 
-        $isProcessed = false;
-        $result = null;
+        $poller = $this->context->window->app->poller;
+
+        $suspension = $poller->createSuspension();
 
         $this->defer($code)
-            ->then(static function (mixed $input) use (&$isProcessed, &$result): mixed {
-                $isProcessed = true;
-                $result = $input;
+            ->then(static function (mixed $input) use ($suspension): mixed {
+                $suspension->resolve($input);
 
                 return $input;
             })
-            ->catch(static function (\Throwable $e) use (&$isProcessed, &$result): \Throwable {
-                $isProcessed = true;
-                $result = $e;
+            ->catch(static function (\Throwable $e) use ($suspension): \Throwable {
+                $suspension->reject($e);
 
                 return $e;
             });
 
         $timeout ??= $this->timeout;
 
-        $poller = $this->context->window->app->poller;
-
-        $poller->delay($timeout, function () use ($code, $timeout): void {
+        $delayId = $poller->delay($timeout, function () use ($code, $timeout): void {
             throw StalledRequestException::becauseRequestIsStalled($code, $timeout);
         });
 
-        while ($isProcessed === false) {
-            $poller->next();
+        try {
+            return $suspension->suspend();
+        } finally {
+            $poller->cancel($delayId);
         }
-
-        return $result;
     }
 
     /**
