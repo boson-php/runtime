@@ -6,9 +6,10 @@ namespace Boson\Api\OperatingSystem;
 
 use Boson\Api\ApplicationExtension;
 use Boson\Api\OperatingSystemApiInterface;
-use Boson\Component\OsInfo\FamilyInterface;
 use Boson\Component\OsInfo\OperatingSystem;
-use Boson\Component\OsInfo\OperatingSystemInterface;
+use Boson\Contracts\OsInfo\FamilyInterface;
+use Boson\Contracts\OsInfo\OperatingSystemInterface;
+use Boson\Contracts\OsInfo\StandardInterface;
 
 /**
  * @internal this is an internal library class, please do not use it in your code
@@ -43,5 +44,10 @@ final class ApplicationOperatingSystem extends ApplicationExtension implements
 
     public iterable $standards {
         get => $this->os->standards;
+    }
+
+    public function isSupports(StandardInterface $standard): bool
+    {
+        return $this->os->isSupports($standard);
     }
 }

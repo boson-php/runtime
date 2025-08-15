@@ -6,7 +6,7 @@ namespace Boson\Tests\Stub;
 
 use Boson\Application;
 use Boson\Component\CpuInfo\ArchitectureInterface;
-use Boson\Component\OsInfo\FamilyInterface;
+use Boson\Contracts\OsInfo\FamilyInterface;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\WebView\Internal\SaucerWebViewEventHandler;
 use Boson\Window\Internal\SaucerWindowEventHandler;
