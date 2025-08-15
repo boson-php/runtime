@@ -11,7 +11,6 @@ use Boson\Shared\Marker\BlockingOperation;
 use Boson\WebView\Internal\SaucerWebViewEventHandler;
 use Boson\Window\Internal\SaucerWindowEventHandler;
 use FFI\CData;
-use Revolt\EventLoop;
 
 /**
  * @api
@@ -94,7 +93,7 @@ class TestingApplicationStub extends Application
     #[BlockingOperation]
     public function run(): void
     {
-        EventLoop::defer(function () {
+        $this->poller->defer(function () {
             $this->quit();
         });
 

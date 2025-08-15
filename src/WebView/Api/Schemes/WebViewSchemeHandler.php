@@ -17,7 +17,6 @@ use Boson\WebView\Api\WebViewExtension;
 use Boson\WebView\Internal\WebViewSchemeHandler\MimeTypeReader;
 use Boson\WebView\WebView;
 use FFI\CData;
-use Revolt\EventLoop;
 
 final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiInterface
 {
@@ -63,7 +62,7 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
             $code = SaucerSchemeError::SAUCER_REQUEST_ERROR_FAILED;
             $this->api->saucer_scheme_executor_reject($executor, $code);
 
-            EventLoop::defer(static function () use ($e) {
+            $this->context->window->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
 

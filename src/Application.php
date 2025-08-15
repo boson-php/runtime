@@ -26,12 +26,14 @@ use Boson\Internal\BootHandler\BootHandlerInterface;
 use Boson\Internal\BootHandler\WindowsDetachConsoleBootHandler;
 use Boson\Internal\DeferRunner\DeferRunnerInterface;
 use Boson\Internal\DeferRunner\NativeShutdownFunctionRunner;
+use Boson\Internal\Poller\SaucerPoller;
 use Boson\Internal\QuitHandler\PcntlQuitHandler;
 use Boson\Internal\QuitHandler\QuitHandlerInterface;
 use Boson\Internal\QuitHandler\WindowsQuitHandler;
 use Boson\Internal\Saucer\Saucer;
 use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\ThreadsCountResolver;
+use Boson\Poller\PollerInterface;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\Shared\Marker\RequiresDealloc;
 use Boson\WebView\WebView;
@@ -40,7 +42,6 @@ use Boson\Window\Manager\WindowManager;
 use Boson\Window\Window;
 use FFI\CData;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Revolt\EventLoop;
 
 /**
  * @template-implements IdentifiableInterface<ApplicationId>
@@ -166,6 +167,11 @@ class Application implements
     private readonly EventListener $listener;
 
     /**
+     * An application poller interface.
+     */
+    public readonly PollerInterface $poller;
+
+    /**
      * @param EventDispatcherInterface|null $dispatcher an optional event
      *        dispatcher for handling application events
      */
@@ -208,6 +214,7 @@ class Application implements
         $this->api = $this->createLibSaucer($info->library, $this->os->family, $this->cpu->arch);
         $this->id = $this->createApplicationId($this->api, $this->info->name, $this->info->threads);
         $this->windows = $this->createWindowManager($this->api, $this, $info, $this->listener);
+        $this->poller = $this->createApplicationPoller($this->api);
 
         // Initialization of Application's API
         $this->dialog = new ApplicationDialog($this->api, $this, $this->listener);
@@ -220,6 +227,14 @@ class Application implements
 
         // Boot the Application
         $this->boot();
+    }
+
+    /**
+     * Create an application event-loop.
+     */
+    protected function createApplicationPoller(SaucerInterface $saucer): PollerInterface
+    {
+        return new SaucerPoller($this->id, $saucer);
     }
 
     /**
@@ -501,17 +516,9 @@ class Application implements
 
         $this->listener->dispatch(new ApplicationStarted($this));
 
-        EventLoop::repeat(0, function (string $id): void {
-            if ($this->isRunning === false) {
-                EventLoop::cancel($id);
-
-                return;
-            }
-
-            $this->api->saucer_application_run_once($this->id->ptr);
-        });
-
-        EventLoop::run();
+        while ($this->isRunning) {
+            $this->poller->next();
+        }
     }
 
     /**

@@ -19,7 +19,6 @@ use Boson\WebView\WebViewState;
 use JetBrains\PhpStorm\Language;
 use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
-use Revolt\EventLoop;
 
 use function React\Promise\resolve;
 
@@ -146,29 +145,34 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
             throw ApplicationNotRunningException::becauseApplicationNotRunning($code);
         }
 
-        $suspension = EventLoop::getSuspension();
+        $isProcessed = false;
+        $result = null;
 
         $this->defer($code)
-            ->then(static function (mixed $input) use ($suspension): mixed {
-                $suspension->resume($input);
+            ->then(static function (mixed $input) use (&$isProcessed, &$result): mixed {
+                $isProcessed = true;
+                $result = $input;
 
                 return $input;
             })
-            ->catch(static function (\Throwable $e) use ($suspension): \Throwable {
-                $suspension->throw($e);
+            ->catch(static function (\Throwable $e) use (&$isProcessed, &$result): \Throwable {
+                $isProcessed = true;
+                $result = $e;
 
                 return $e;
             });
 
         $timeout ??= $this->timeout;
 
-        $delayId = EventLoop::delay($timeout, function () use ($code, $timeout): void {
+        $poller = $this->context->window->app->poller;
+
+        $poller->delay($timeout, function () use ($code, $timeout): void {
             throw StalledRequestException::becauseRequestIsStalled($code, $timeout);
         });
 
-        $result = $suspension->suspend();
-
-        EventLoop::cancel($delayId);
+        while ($isProcessed === false) {
+            $poller->next();
+        }
 
         return $result;
     }

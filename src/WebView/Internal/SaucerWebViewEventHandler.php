@@ -22,7 +22,6 @@ use Boson\WebView\WebView;
 use Boson\WebView\WebViewState;
 use FFI\CData;
 use Psr\EventDispatcher\EventDispatcherInterface;
-use Revolt\EventLoop;
 
 /**
  * @internal this is an internal library class, please do not use it in your code
@@ -116,7 +115,7 @@ final class SaucerWebViewEventHandler
         try {
             return $this->onMessageReceived($message);
         } catch (\Throwable $e) {
-            EventLoop::defer(static function () use ($e) {
+            $this->webview->window->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
         }
@@ -138,7 +137,7 @@ final class SaucerWebViewEventHandler
         try {
             $this->onDomReady($_);
         } catch (\Throwable $e) {
-            EventLoop::defer(static function () use ($e) {
+            $this->webview->window->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
         }
@@ -152,7 +151,7 @@ final class SaucerWebViewEventHandler
                 url: Request::castUrl($url),
             ));
         } catch (\Throwable $e) {
-            EventLoop::defer(static function () use ($e) {
+            $this->webview->window->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
         }
@@ -163,7 +162,7 @@ final class SaucerWebViewEventHandler
         try {
             $this->onNavigated($_, $url);
         } catch (\Throwable $e) {
-            EventLoop::defer(static function () use ($e) {
+            $this->webview->window->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
         }
@@ -197,7 +196,7 @@ final class SaucerWebViewEventHandler
         try {
             return $this->onNavigating($_, $navigation);
         } catch (\Throwable $e) {
-            EventLoop::defer(static function () use ($e) {
+            $this->webview->window->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
 
@@ -226,7 +225,7 @@ final class SaucerWebViewEventHandler
         try {
             $this->onFaviconChanged($ptr, $icon);
         } catch (\Throwable $e) {
-            EventLoop::defer(static function () use ($e) {
+            $this->webview->window->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
         }
@@ -252,7 +251,7 @@ final class SaucerWebViewEventHandler
         try {
             $this->onTitleChanged($ptr, $title);
         } catch (\Throwable $e) {
-            EventLoop::defer(static function () use ($e) {
+            $this->webview->window->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
         }
