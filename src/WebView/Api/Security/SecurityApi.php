@@ -10,8 +10,10 @@ use Boson\WebView\WebViewState;
 
 /**
  * Provides information about the security context of the WebView.
+ *
+ * @uses \Boson\WebView\Api\DataApiInterface
  */
-final class WebViewSecurity extends WebViewExtension implements SecurityApiInterface
+final class SecurityApi extends WebViewExtension implements SecurityApiInterface
 {
     /**
      * @var non-empty-list<non-empty-string>
@@ -45,8 +47,8 @@ final class WebViewSecurity extends WebViewExtension implements SecurityApiInter
      */
     private function getSecurityContext(): bool
     {
-        if ($this->context->state === WebViewState::Ready) {
-            $scheme = $this->context->url->scheme?->name;
+        if ($this->webview->state === WebViewState::Ready) {
+            $scheme = $this->webview->url->scheme?->name;
 
             if ($scheme === null) {
                 return false;
@@ -66,7 +68,7 @@ final class WebViewSecurity extends WebViewExtension implements SecurityApiInter
      */
     private function getRealSecurity(): bool
     {
-        return (bool) $this->context->data->get('window.isSecureContext');
+        return (bool) $this->webview->data->get('window.isSecureContext');
     }
 
     /**
@@ -78,7 +80,7 @@ final class WebViewSecurity extends WebViewExtension implements SecurityApiInter
      */
     private function getSoftwareSecurity(): bool
     {
-        $scheme = $this->context->url->scheme?->name;
+        $scheme = $this->webview->url->scheme?->name;
 
         return !\in_array($scheme, self::DEFAULT_SOFTWARE_INSECURE_SCHEMES, true);
     }

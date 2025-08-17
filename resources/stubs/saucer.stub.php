@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Boson\Internal\Saucer;
+namespace Boson\Api;
 
 use FFI\CData;
 use FFI\CType;

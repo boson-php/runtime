@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Boson\Internal\Poller;
 
+use Boson\Api\SaucerInterface;
 use Boson\ApplicationId;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Poller\PollerInterface;
 use Boson\Poller\Suspension;
 use Boson\Shared\IdValueGenerator\IdValueGeneratorInterface;

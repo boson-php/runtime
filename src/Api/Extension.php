@@ -10,28 +10,14 @@ use Boson\Dispatcher\Event;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\Intention;
 use Boson\Internal\StructPointerId;
-use FFI\CData;
 
 /**
- * @template T of IdentifiableInterface<StructPointerId>
+ * @template TContext of IdentifiableInterface<StructPointerId>
  */
 abstract class Extension
 {
-    protected StructPointerId $id {
-        /** @phpstan-ignore-next-line : Context is a "IdentifiableInterface<StructPointerId>" */
-        get => $this->context->id;
-    }
-
-    protected CData $ptr {
-        get => $this->id->ptr;
-    }
-
     public function __construct(
-        /**
-         * @var T
-         */
-        protected readonly IdentifiableInterface $context,
-        private readonly EventListener $listener,
+        protected readonly EventListener $listener,
     ) {}
 
     /**
@@ -48,7 +34,10 @@ abstract class Extension
     }
 
     /**
-     * @param Intention<T> $intention
+     * Dispatch intention instance and returns {@see false} in
+     * case of intention has been cancelled.
+     *
+     * @param Intention<TContext> $intention
      */
     protected function intent(object $intention): bool
     {
@@ -58,7 +47,9 @@ abstract class Extension
     }
 
     /**
-     * @param Event<T> $event
+     * Dispatch immutable event.
+     *
+     * @param Event<TContext> $event
      */
     protected function dispatch(object $event): void
     {

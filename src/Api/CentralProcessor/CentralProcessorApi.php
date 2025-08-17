@@ -14,7 +14,7 @@ use Boson\Component\CpuInfo\CentralProcessorInterface;
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson
  */
-final class ApplicationCentralProcessor extends ApplicationExtension implements
+final class CentralProcessorApi extends ApplicationExtension implements
     CentralProcessorApiInterface
 {
     private CentralProcessorInterface $cpu {

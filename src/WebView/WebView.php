@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\WebView;
 
+use Boson\Api\SaucerInterface;
 use Boson\Component\Http\Request;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
@@ -12,26 +13,25 @@ use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
 use Boson\Exception\BosonException;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Shared\Marker\BlockingOperation;
-use Boson\WebView\Api\Battery\WebViewBattery;
+use Boson\WebView\Api\Battery\BatteryApi;
 use Boson\WebView\Api\BatteryApiInterface;
+use Boson\WebView\Api\Bindings\BindingsApi;
 use Boson\WebView\Api\Bindings\Exception\FunctionAlreadyDefinedException;
-use Boson\WebView\Api\Bindings\WebViewBindingsMap;
 use Boson\WebView\Api\BindingsApiInterface;
-use Boson\WebView\Api\Data\WebViewData;
+use Boson\WebView\Api\Data\DataApi;
 use Boson\WebView\Api\DataApiInterface;
-use Boson\WebView\Api\Network\WebViewNetwork;
+use Boson\WebView\Api\Network\NetworkApi;
 use Boson\WebView\Api\NetworkApiInterface;
-use Boson\WebView\Api\Schemes\WebViewSchemeHandler;
+use Boson\WebView\Api\Schemes\SchemesApi;
 use Boson\WebView\Api\SchemesApiInterface;
-use Boson\WebView\Api\Scripts\WebViewScriptsSet;
+use Boson\WebView\Api\Scripts\ScriptsApi;
 use Boson\WebView\Api\ScriptsApiInterface;
-use Boson\WebView\Api\Security\WebViewSecurity;
+use Boson\WebView\Api\Security\SecurityApi;
 use Boson\WebView\Api\SecurityApiInterface;
 use Boson\WebView\Api\WebComponents\Exception\ComponentAlreadyDefinedException;
 use Boson\WebView\Api\WebComponents\Exception\WebComponentsApiException;
-use Boson\WebView\Api\WebComponents\WebViewWebComponents;
+use Boson\WebView\Api\WebComponents\WebComponentsApi;
 use Boson\WebView\Api\WebComponentsApiInterface;
 use Boson\WebView\Internal\SaucerWebViewEventHandler;
 use Boson\Window\Window;
@@ -209,14 +209,14 @@ final class WebView implements
         $this->listener = self::createEventListener($dispatcher);
 
         // Initialization of WebView's API
-        $this->scripts = new WebViewScriptsSet($api, $this, $this->listener);
-        $this->bindings = new WebViewBindingsMap($this, $this->listener);
-        $this->data = new WebViewData($this, $this->listener);
-        $this->security = new WebViewSecurity($this, $this->listener);
-        $this->components = new WebViewWebComponents($this, $this->listener);
-        $this->battery = new WebViewBattery($this, $this->listener);
-        $this->network = new WebViewNetwork($this, $this->listener);
-        $this->schemes = new WebViewSchemeHandler($api, $this, $this->listener);
+        $this->scripts = new ScriptsApi($api, $this, $this->listener);
+        $this->bindings = new BindingsApi($this, $this->listener);
+        $this->data = new DataApi($this, $this->listener);
+        $this->security = new SecurityApi($this, $this->listener);
+        $this->components = new WebComponentsApi($this, $this->listener);
+        $this->battery = new BatteryApi($this, $this->listener);
+        $this->network = new NetworkApi($this, $this->listener);
+        $this->schemes = new SchemesApi($api, $this, $this->listener);
         $this->handler = new SaucerWebViewEventHandler($api, $this, $this->listener, $this->state);
 
         // Register WebView's subsystems
@@ -275,7 +275,7 @@ final class WebView implements
     /**
      * Binds a PHP callback to a new global JavaScript function.
      *
-     * Note: This is facade method of the {@see WebViewBindingsMap::bind()},
+     * Note: This is facade method of the {@see BindingsApi::bind()},
      *       that provides by the {@see $bindings} field. This means that
      *       calling `$webview->functions->bind(...)` should have the same effect.
      *
@@ -295,15 +295,15 @@ final class WebView implements
     /**
      * Evaluates arbitrary JavaScript code.
      *
-     * Note: This is facade method of the {@see WebViewScriptsSet::eval()},
+     * Note: This is facade method of the {@see ScriptsApi::eval()},
      *       that provides by the {@see $scripts} field. This means that
      *       calling `$webview->scripts->eval(...)` should have the same effect.
      *
      * @api
      *
-     * @uses ScriptsApiInterface::eval() WebView Scripts API
-     *
      * @param string $code A JavaScript code for execution
+     *
+     * @uses ScriptsApiInterface::eval() WebView Scripts API
      */
     public function eval(#[Language('JavaScript')] string $code): void
     {
@@ -313,7 +313,7 @@ final class WebView implements
     /**
      * Requests arbitrary data from webview using JavaScript code.
      *
-     * Note: This is facade method of the {@see WebViewData::get()},
+     * Note: This is facade method of the {@see DataApi::get()},
      *       that provides by the {@see $data} field. This means that
      *       calling `$webview->requests->send(...)` should have the same effect.
      *

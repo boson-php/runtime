@@ -20,7 +20,7 @@ use FFI\CData;
  */
 class TestingApplicationStub extends Application
 {
-    public readonly TestingSaucerStub $api;
+    public readonly TestingSaucerStub $saucer;
 
     #[\Override]
     protected function createLibSaucer(
@@ -86,7 +86,7 @@ class TestingApplicationStub extends Application
 
         $stub->addDefaultMethod('saucer_application_quit');
 
-        return $this->api = $stub;
+        return $this->saucer = $stub;
     }
 
     #[\Override]

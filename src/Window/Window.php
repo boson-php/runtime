@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Boson\Window;
 
+use Boson\Api\SaucerInterface;
 use Boson\Application;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\Saucer\SaucerWindowEdge;
 use Boson\Shared\Marker\RequiresDealloc;
 use Boson\WebView\Internal\WebViewCreateInfo\FlagsListFormatter;

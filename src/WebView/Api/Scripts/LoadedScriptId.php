@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Scripts;
 
-use Boson\Internal\Saucer\SaucerInterface;
+use Boson\Api\SaucerInterface;
 use Boson\Internal\StructPointerId;
 use FFI\CData;
 

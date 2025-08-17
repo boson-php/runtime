@@ -28,9 +28,14 @@ use Boson\WebView\WebView;
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson\WebView
+ *
+ * @uses \Boson\WebView\Api\DataApiInterface
+ * @uses \Boson\WebView\Api\BindingsApiInterface
+ * @uses \Boson\WebView\Api\SecurityApiInterface
+ * @uses \Boson\WebView\Api\ScriptsApiInterface
  */
 #[ExpectsSecurityContext]
-final class WebViewBattery extends WebViewExtension implements BatteryApiInterface
+final class BatteryApi extends WebViewExtension implements BatteryApiInterface
 {
     public float $level {
         /** @phpstan-ignore-next-line : data can never be null */
@@ -75,7 +80,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
     {
         parent::__construct($context, $listener);
 
-        $this->isEventsEnabled = $this->context->info->battery->enableEvents;
+        $this->isEventsEnabled = $this->webview->info->battery->enableEvents;
 
         if ($this->isEventsEnabled) {
             $this->registerDefaultFunctions();
@@ -85,10 +90,10 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
 
     private function registerDefaultFunctions(): void
     {
-        $this->context->bindings->bind('boson.battery.onLevelChange', $this->onLevelChange(...));
-        $this->context->bindings->bind('boson.battery.onChargingChange', $this->onChargingChange(...));
-        $this->context->bindings->bind('boson.battery.onChargingTimeChange', $this->onChargingTimeChange(...));
-        $this->context->bindings->bind('boson.battery.onDischargingTimeChange', $this->onDischargingTimeChange(...));
+        $this->webview->bindings->bind('boson.battery.onLevelChange', $this->onLevelChange(...));
+        $this->webview->bindings->bind('boson.battery.onChargingChange', $this->onChargingChange(...));
+        $this->webview->bindings->bind('boson.battery.onChargingTimeChange', $this->onChargingTimeChange(...));
+        $this->webview->bindings->bind('boson.battery.onDischargingTimeChange', $this->onDischargingTimeChange(...));
     }
 
     /**
@@ -96,7 +101,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
      */
     private function registerDefaultClientEventListeners(): void
     {
-        $this->context->scripts->add(<<<'JS'
+        $this->webview->scripts->add(<<<'JS'
             document.addEventListener('levelchange', () => boson.battery.onLevelChange());
             document.addEventListener('chargingchange', () => boson.battery.onChargingChange());
             document.addEventListener('chargingtimechange', () => boson.battery.onChargingTimeChange());
@@ -109,7 +114,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
         $this->flushClientInfo();
 
         $this->dispatch(new BatteryLevelChanged(
-            subject: $this->context,
+            subject: $this->webview,
             level: $this->level,
         ));
     }
@@ -119,7 +124,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
         $this->flushClientInfo();
 
         $this->dispatch(new BatteryChargingStateChanged(
-            subject: $this->context,
+            subject: $this->webview,
             isCharging: $this->isCharging,
         ));
     }
@@ -129,7 +134,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
         $this->flushClientInfo();
 
         $this->dispatch(new BatteryChargingTimeChanged(
-            subject: $this->context,
+            subject: $this->webview,
             chargingTime: $this->chargingTime,
         ));
     }
@@ -139,7 +144,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
         $this->flushClientInfo();
 
         $this->dispatch(new BatteryDischargingTimeChanged(
-            subject: $this->context,
+            subject: $this->webview,
             dischargingTime: $this->dischargingTime,
         ));
     }
@@ -154,12 +159,12 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
      */
     private function fetchClientInfo(): array
     {
-        if (!$this->context->security->isSecureContext) {
+        if (!$this->webview->security->isSecureContext) {
             throw InsecureBatteryContextException::becauseContextIsInsecure();
         }
 
         try {
-            if ($this->context->data->get('navigator.getBattery instanceof Function') !== true) {
+            if ($this->webview->data->get('navigator.getBattery instanceof Function') !== true) {
                 throw BatteryNotAvailableException::becauseBatteryNotAvailable();
             }
         } catch (WebViewIsNotReadyException $e) {
@@ -167,7 +172,7 @@ final class WebViewBattery extends WebViewExtension implements BatteryApiInterfa
         }
 
         /** @var BatteryInfoType */
-        return $this->context->data->get('navigator.getBattery()
+        return $this->webview->data->get('navigator.getBattery()
             .then((manager) => ({
                 level: manager.level,
                 charging: manager.charging,

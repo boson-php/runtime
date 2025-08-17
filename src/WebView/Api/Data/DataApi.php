@@ -25,8 +25,11 @@ use function React\Promise\resolve;
 /**
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson\WebView
+ *
+ * @uses \Boson\WebView\Api\BindingsApiInterface
+ * @uses \Boson\WebView\Api\ScriptsApiInterface
  */
-final class WebViewData extends WebViewExtension implements DataApiInterface
+final class DataApi extends WebViewExtension implements DataApiInterface
 {
     private const string DATA_REQUEST_TEMPLATE = <<<'JS'
         try {
@@ -92,8 +95,8 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
         $this->callback = $context->info->data->callback;
         $this->failureCallback = $context->info->data->failureCallback;
 
-        $this->context->bind($this->callback, $this->onResponseReceived(...));
-        $this->context->bind($this->failureCallback, $this->onFailureReceived(...));
+        $this->webview->bindings->bind($this->callback, $this->onResponseReceived(...));
+        $this->webview->bindings->bind($this->failureCallback, $this->onFailureReceived(...));
     }
 
     /**
@@ -125,7 +128,7 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
             $this->pull($id);
         });
 
-        $this->context->scripts->eval($this->pack($id, $code));
+        $this->webview->scripts->eval($this->pack($id, $code));
 
         return $deferred->promise();
     }
@@ -137,15 +140,15 @@ final class WebViewData extends WebViewExtension implements DataApiInterface
             return '';
         }
 
-        if ($this->context->state === WebViewState::Navigating) {
+        if ($this->webview->state === WebViewState::Navigating) {
             throw WebViewIsNotReadyException::becauseWebViewIsNotReady($code);
         }
 
-        if ($this->context->window->app->isRunning === false) {
+        if ($this->app->isRunning === false) {
             throw ApplicationNotRunningException::becauseApplicationNotRunning($code);
         }
 
-        $poller = $this->context->window->app->poller;
+        $poller = $this->app->poller;
 
         $suspension = $poller->createSuspension();
 

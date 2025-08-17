@@ -26,8 +26,11 @@ use Boson\WebView\WebView;
 
 /**
  * @template-implements \IteratorAggregate<non-empty-string, class-string>
+ *
+ * @uses \Boson\WebView\Api\BindingsApiInterface
+ * @uses \Boson\WebView\Api\ScriptsApiInterface
  */
-final class WebViewWebComponents extends WebViewExtension implements
+final class WebComponentsApi extends WebViewExtension implements
     WebComponentsApiInterface,
     \IteratorAggregate
 {
@@ -149,13 +152,13 @@ final class WebViewWebComponents extends WebViewExtension implements
 
     private function registerDefaultFunctions(): void
     {
-        $this->context->bind('boson.components.created', $this->onCreated(...));
-        $this->context->bind('boson.components.connected', $this->onConnected(...));
-        $this->context->bind('boson.components.disconnected', $this->onDisconnected(...));
-        $this->context->bind('boson.components.attributeChanged', $this->onAttributeChanged(...));
-        $this->context->bind('boson.components.propertyChanged', $this->onPropertyChanged(...));
-        $this->context->bind('boson.components.invoke', $this->onInvoke(...));
-        $this->context->bind('boson.components.fire', $this->onFire(...));
+        $this->webview->bindings->bind('boson.components.created', $this->onCreated(...));
+        $this->webview->bindings->bind('boson.components.connected', $this->onConnected(...));
+        $this->webview->bindings->bind('boson.components.disconnected', $this->onDisconnected(...));
+        $this->webview->bindings->bind('boson.components.attributeChanged', $this->onAttributeChanged(...));
+        $this->webview->bindings->bind('boson.components.propertyChanged', $this->onPropertyChanged(...));
+        $this->webview->bindings->bind('boson.components.invoke', $this->onInvoke(...));
+        $this->webview->bindings->bind('boson.components.fire', $this->onFire(...));
     }
 
     private function onCreated(string $tag, string $id): ?string
@@ -315,7 +318,7 @@ final class WebViewWebComponents extends WebViewExtension implements
 
         $this->components[$name] = $component;
 
-        $this->context->scripts->add($this->builder->build(
+        $this->webview->scripts->add($this->builder->build(
             tagName: $name,
             className: $this->getClassName($component),
             component: $component,

@@ -15,7 +15,7 @@ use Boson\Contracts\OsInfo\StandardInterface;
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson
  */
-final class ApplicationOperatingSystem extends ApplicationExtension implements
+final class OperatingSystemApi extends ApplicationExtension implements
     OperatingSystemApiInterface
 {
     private OperatingSystemInterface $os {

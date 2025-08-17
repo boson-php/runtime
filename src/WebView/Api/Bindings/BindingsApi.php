@@ -21,8 +21,10 @@ use Boson\WebView\WebView;
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson\WebView
+ *
+ * @uses \Boson\WebView\Api\ScriptsApiInterface
  */
-final class WebViewBindingsMap extends WebViewExtension implements
+final class BindingsApi extends WebViewExtension implements
     BindingsApiInterface,
     \IteratorAggregate
 {
@@ -163,7 +165,7 @@ final class WebViewBindingsMap extends WebViewExtension implements
      */
     private function registerClientFunction(string $name): void
     {
-        $this->context->scripts->add($this->packer->pack(
+        $this->webview->scripts->add($this->packer->pack(
             path: $name,
             code: $this->packFunction($name),
         ));

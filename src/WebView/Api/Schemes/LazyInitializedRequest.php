@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Schemes;
 
+use Boson\Api\SaucerInterface;
 use Boson\Component\Http\Request;
 use Boson\Contracts\Http\Component\HeadersInterface;
 use Boson\Contracts\Http\Component\MethodInterface;
 use Boson\Contracts\Http\RequestInterface;
 use Boson\Contracts\Uri\UriInterface;
-use Boson\Internal\Saucer\SaucerInterface;
 use FFI\CData;
 
 /**

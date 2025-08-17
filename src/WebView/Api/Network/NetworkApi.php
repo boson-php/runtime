@@ -25,8 +25,12 @@ use Boson\WebView\WebView;
  *
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson\WebView
+ *
+ * @uses \Boson\WebView\Api\BindingsApiInterface
+ * @uses \Boson\WebView\Api\ScriptsApiInterface
+ * @uses \Boson\WebView\Api\DataApiInterface
  */
-final class WebViewNetwork extends WebViewExtension implements
+final class NetworkApi extends WebViewExtension implements
     NetworkApiInterface
 {
     /**
@@ -107,7 +111,7 @@ final class WebViewNetwork extends WebViewExtension implements
     {
         parent::__construct($context, $listener);
 
-        $this->isEventsEnabled = $this->context->info->network->enableEvents;
+        $this->isEventsEnabled = $this->webview->info->network->enableEvents;
 
         if ($this->isEventsEnabled) {
             $this->registerDefaultFunctions();
@@ -117,7 +121,7 @@ final class WebViewNetwork extends WebViewExtension implements
 
     private function registerDefaultFunctions(): void
     {
-        $this->context->bindings->bind('boson.network.onChange', $this->onChange(...));
+        $this->webview->bindings->bind('boson.network.onChange', $this->onChange(...));
     }
 
     /**
@@ -125,7 +129,7 @@ final class WebViewNetwork extends WebViewExtension implements
      */
     private function registerDefaultClientEventListeners(): void
     {
-        $this->context->scripts->add(<<<'JS'
+        $this->webview->scripts->add(<<<'JS'
             navigator.connection.addEventListener('change', () => boson.network.onChange());
             JS);
     }
@@ -135,7 +139,7 @@ final class WebViewNetwork extends WebViewExtension implements
         $this->flushClientInfo();
 
         $this->dispatch(new NetworkInfoChanged(
-            subject: $this->context,
+            subject: $this->webview,
         ));
     }
 
@@ -150,7 +154,7 @@ final class WebViewNetwork extends WebViewExtension implements
     private function fetchClientInfo(): array
     {
         try {
-            if ($this->context->data->get('navigator.connection instanceof NetworkInformation') !== true) {
+            if ($this->webview->data->get('navigator.connection instanceof NetworkInformation') !== true) {
                 throw NetworkNotAvailableException::becauseNetworkNotAvailable();
             }
         } catch (WebViewIsNotReadyException $e) {
@@ -158,7 +162,7 @@ final class WebViewNetwork extends WebViewExtension implements
         }
 
         /** @var NetworkInfoType */
-        return $this->context->data->get('{
+        return $this->webview->data->get('{
             downlink: navigator.connection.downlink ?? 0.0,
             downlinkMax: navigator.connection.downlinkMax ?? null,
             effectiveType: navigator.connection.effectiveType ?? "4g",

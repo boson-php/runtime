@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Window\Internal\Size;
 
-use Boson\Internal\Saucer\SaucerInterface;
+use Boson\Api\SaucerInterface;
 use Boson\Window\MutableSizeInterface;
 use Boson\Window\Size\SizeStringableImpl;
 use FFI\CData;

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Boson;
 
-use Boson\Api\CentralProcessor\ApplicationCentralProcessor;
+use Boson\Api\CentralProcessor\CentralProcessorApi;
 use Boson\Api\CentralProcessorApiInterface;
-use Boson\Api\Dialog\ApplicationDialog;
+use Boson\Api\Dialog\DialogApi;
 use Boson\Api\DialogApiInterface;
-use Boson\Api\OperatingSystem\ApplicationOperatingSystem;
+use Boson\Api\OperatingSystem\OperatingSystemApi;
 use Boson\Api\OperatingSystemApiInterface;
+use Boson\Api\SaucerInterface;
 use Boson\Component\CpuInfo\ArchitectureInterface;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
@@ -31,7 +32,6 @@ use Boson\Internal\QuitHandler\PcntlQuitHandler;
 use Boson\Internal\QuitHandler\QuitHandlerInterface;
 use Boson\Internal\QuitHandler\WindowsQuitHandler;
 use Boson\Internal\Saucer\Saucer;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\ThreadsCountResolver;
 use Boson\Poller\PollerInterface;
 use Boson\Shared\Marker\BlockingOperation;
@@ -159,7 +159,7 @@ class Application implements
      * @internal Not safe, you can get segfault, use
      *           this low-level API at your own risk!
      */
-    private readonly SaucerInterface $api;
+    public readonly SaucerInterface $saucer;
 
     /**
      * Application-aware event listener & dispatcher.
@@ -207,17 +207,17 @@ class Application implements
         $this->listener = $this->createEventListener($dispatcher);
 
         // Initialization of Software Application's API
-        $this->cpu = new ApplicationCentralProcessor($this, $this->listener);
-        $this->os = new ApplicationOperatingSystem($this, $this->listener);
+        $this->cpu = new CentralProcessorApi($this, $this->listener);
+        $this->os = new OperatingSystemApi($this, $this->listener);
 
         // Kernel initialization
-        $this->api = $this->createLibSaucer($info->library, $this->os->family, $this->cpu->arch);
-        $this->id = $this->createApplicationId($this->api, $this->info->name, $this->info->threads);
-        $this->windows = $this->createWindowManager($this->api, $this, $info, $this->listener);
-        $this->poller = $this->createApplicationPoller($this->api);
+        $this->saucer = $this->createLibSaucer($info->library, $this->os->family, $this->cpu->arch);
+        $this->id = $this->createApplicationId($this->saucer, $this->info->name, $this->info->threads);
+        $this->windows = $this->createWindowManager($this->saucer, $this, $info, $this->listener);
+        $this->poller = $this->createApplicationPoller($this->saucer);
 
         // Initialization of Application's API
-        $this->dialog = new ApplicationDialog($this->api, $this, $this->listener);
+        $this->dialog = new DialogApi($this->saucer, $this, $this->listener);
 
         // Register Application's subsystems
         $this->registerSchemes();
@@ -318,7 +318,7 @@ class Application implements
     private function registerSchemes(): void
     {
         foreach ($this->info->schemes as $scheme) {
-            $this->api->saucer_register_scheme($scheme);
+            $this->saucer->saucer_register_scheme($scheme);
         }
     }
 
@@ -547,7 +547,7 @@ class Application implements
 
         $this->wasEverRunning = true;
         $this->isRunning = false;
-        $this->api->saucer_application_quit($this->id->ptr);
+        $this->saucer->saucer_application_quit($this->id->ptr);
 
         $this->listener->dispatch(new ApplicationStopped($this));
     }
@@ -560,7 +560,7 @@ class Application implements
      */
     public function __destruct()
     {
-        $this->api->saucer_application_quit($this->id->ptr);
-        $this->api->saucer_application_free($this->id->ptr);
+        $this->saucer->saucer_application_quit($this->id->ptr);
+        $this->saucer->saucer_application_free($this->id->ptr);
     }
 }

@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Boson\Window\Manager;
 
+use Boson\Api\SaucerInterface;
 use Boson\Application;
 use Boson\Component\WeakType\ObservableWeakSet;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Window\Event\WindowClosed;
 use Boson\Window\Event\WindowCreated;
 use Boson\Window\Event\WindowDestroyed;

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Schemes;
 
+use Boson\Api\SaucerInterface;
 use Boson\Contracts\Http\RequestInterface;
 use Boson\Contracts\Http\ResponseInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\SaucerInterface;
 use Boson\Internal\Saucer\SaucerLaunch;
 use Boson\Internal\Saucer\SaucerSchemeError;
 use Boson\Shared\Marker\RequiresDealloc;
@@ -18,7 +18,7 @@ use Boson\WebView\Internal\WebViewSchemeHandler\MimeTypeReader;
 use Boson\WebView\WebView;
 use FFI\CData;
 
-final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiInterface
+final class SchemesApi extends WebViewExtension implements SchemesApiInterface
 {
     public array $schemes;
 
@@ -46,7 +46,7 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
     {
         foreach ($schemes as $scheme) {
             $this->api->saucer_webview_handle_scheme(
-                $this->context->id->ptr,
+                $this->ptr,
                 $scheme,
                 $this->onSafeRequest(...),
                 SaucerLaunch::SAUCER_LAUNCH_SYNC,
@@ -62,7 +62,7 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
             $code = SaucerSchemeError::SAUCER_REQUEST_ERROR_FAILED;
             $this->api->saucer_scheme_executor_reject($executor, $code);
 
-            $this->context->window->app->poller->defer(static function () use ($e) {
+            $this->app->poller->defer(static function () use ($e) {
                 throw $e;
             });
 
@@ -74,7 +74,7 @@ final class WebViewSchemeHandler extends WebViewExtension implements SchemesApiI
     {
         try {
             $processable = $this->intent($intention = new SchemeRequestReceived(
-                subject: $this->context,
+                subject: $this->webview,
                 request: $this->createRequest($request),
             ));
 

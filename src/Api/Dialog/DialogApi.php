@@ -6,16 +6,16 @@ namespace Boson\Api\Dialog;
 
 use Boson\Api\ApplicationExtension;
 use Boson\Api\DialogApiInterface;
+use Boson\Api\SaucerInterface;
 use Boson\Application;
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\SaucerInterface;
 use FFI\CData;
 
 /**
  * @internal this is an internal library class, please do not use it in your code
  * @psalm-internal Boson
  */
-final class ApplicationDialog extends ApplicationExtension implements DialogApiInterface
+final class DialogApi extends ApplicationExtension implements DialogApiInterface
 {
     protected CData $ptr {
         /** @phpstan-ignore-next-line : PHPStan does not support property inheritance */

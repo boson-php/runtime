@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Scripts;
 
+use Boson\Api\SaucerInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
-use Boson\Internal\Saucer\SaucerInterface;
 use JetBrains\PhpStorm\Language;
 
 final readonly class LoadedScript implements

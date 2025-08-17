@@ -35,11 +35,11 @@ final class ApplicationConfigurationTest extends ApplicationTestCase
         $devTools = null;
         $contextMenu = null;
 
-        $app->api->onMethodCall('saucer_webview_set_dev_tools', function ($_, bool $enabled) use (&$devTools) {
+        $app->saucer->onMethodCall('saucer_webview_set_dev_tools', function ($_, bool $enabled) use (&$devTools) {
             $devTools = $enabled;
         });
 
-        $app->api->onMethodCall('saucer_webview_set_context_menu', function ($_, bool $enabled) use (&$contextMenu) {
+        $app->saucer->onMethodCall('saucer_webview_set_context_menu', function ($_, bool $enabled) use (&$contextMenu) {
             $contextMenu = $enabled;
         });
 
@@ -59,11 +59,11 @@ final class ApplicationConfigurationTest extends ApplicationTestCase
         $devTools = null;
         $contextMenu = null;
 
-        $app->api->onMethodCall('saucer_webview_set_dev_tools', function ($_, bool $enabled) use (&$devTools) {
+        $app->saucer->onMethodCall('saucer_webview_set_dev_tools', function ($_, bool $enabled) use (&$devTools) {
             $devTools = $enabled;
         });
 
-        $app->api->onMethodCall('saucer_webview_set_context_menu', function ($_, bool $enabled) use (&$contextMenu) {
+        $app->saucer->onMethodCall('saucer_webview_set_context_menu', function ($_, bool $enabled) use (&$contextMenu) {
             $contextMenu = $enabled;
         });
 

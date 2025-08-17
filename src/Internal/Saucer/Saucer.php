@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Internal\Saucer;
 
+use Boson\Api\SaucerInterface;
 use Boson\Component\CpuInfo\Architecture;
 use Boson\Component\CpuInfo\ArchitectureInterface;
 use Boson\Component\CpuInfo\CentralProcessor;

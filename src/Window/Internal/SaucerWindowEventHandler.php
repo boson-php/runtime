@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Window\Internal;
 
-use Boson\Internal\Saucer\SaucerInterface;
+use Boson\Api\SaucerInterface;
 use Boson\Internal\Saucer\SaucerPolicy;
 use Boson\Internal\Saucer\SaucerWindowEvent;
 use Boson\Internal\Window\CSaucerWindowEventsStruct;

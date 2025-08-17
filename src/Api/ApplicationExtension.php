@@ -5,15 +5,36 @@ declare(strict_types=1);
 namespace Boson\Api;
 
 use Boson\Application;
+use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
+use Boson\Internal\StructPointerId;
+use FFI\CData;
 
 /**
- * @template-extends Extension<Application>
+ * @template TContext of IdentifiableInterface<StructPointerId> = Application
+ *
+ * @template-extends Extension<TContext>
  */
 abstract class ApplicationExtension extends Extension
 {
-    public function __construct(Application $context, EventListener $listener)
-    {
-        parent::__construct($context, $listener);
+    /**
+     * Gets reference to the context's ID
+     */
+    protected StructPointerId $id {
+        get => $this->app->id;
+    }
+
+    /**
+     * Gets reference to the context's pointer
+     */
+    protected CData $ptr {
+        get => $this->id->ptr;
+    }
+
+    public function __construct(
+        protected readonly Application $app,
+        EventListener $listener,
+    ) {
+        parent::__construct($listener);
     }
 }

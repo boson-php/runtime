@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Tests\Stub;
 
-use Boson\Internal\Saucer\SaucerInterface;
+use Boson\Api\SaucerInterface;
 
 /**
  * @api
