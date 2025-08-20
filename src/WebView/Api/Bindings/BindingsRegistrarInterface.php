@@ -17,7 +17,7 @@ interface BindingsRegistrarInterface
      * (e.g., "app.functions.myFunction").
      *
      * @param non-empty-string $function The name of the JavaScript function
-     * @param \Closure(mixed...):(void|mixed) $callback The PHP callback to execute
+     * @param \Closure $callback The PHP callback to execute
      *
      * @throws FunctionAlreadyDefinedException if the function is already defined
      */
