@@ -10,11 +10,10 @@ use Boson\Api\Dialog\DialogApi;
 use Boson\Api\DialogApiInterface;
 use Boson\Api\OperatingSystem\OperatingSystemApi;
 use Boson\Api\OperatingSystemApiInterface;
-use Boson\Api\SaucerInterface;
-use Boson\Component\CpuInfo\ArchitectureInterface;
+use Boson\Component\Saucer\Saucer;
+use Boson\Component\Saucer\SaucerInterface;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
-use Boson\Contracts\OsInfo\FamilyInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
@@ -31,7 +30,6 @@ use Boson\Internal\Poller\SaucerPoller;
 use Boson\Internal\QuitHandler\PcntlQuitHandler;
 use Boson\Internal\QuitHandler\QuitHandlerInterface;
 use Boson\Internal\QuitHandler\WindowsQuitHandler;
-use Boson\Internal\Saucer\Saucer;
 use Boson\Internal\ThreadsCountResolver;
 use Boson\Poller\PollerInterface;
 use Boson\Shared\Marker\BlockingOperation;
@@ -211,7 +209,7 @@ class Application implements
         $this->os = new OperatingSystemApi($this, $this->listener);
 
         // Kernel initialization
-        $this->saucer = $this->createLibSaucer($info->library, $this->os->family, $this->cpu->arch);
+        $this->saucer = $this->createLibSaucer($info->library);
         $this->id = $this->createApplicationId($this->saucer, $this->info->name, $this->info->threads);
         $this->windows = $this->createWindowManager($this->saucer, $this, $info, $this->listener);
         $this->poller = $this->createApplicationPoller($this->saucer);
@@ -249,12 +247,13 @@ class Application implements
      *
      * @param non-empty-string|null $library Optional path to the WebView library
      */
-    protected function createLibSaucer(
-        ?string $library,
-        FamilyInterface $os,
-        ArchitectureInterface $cpu,
-    ): SaucerInterface {
-        return new Saucer($library, $os, $cpu);
+    protected function createLibSaucer(?string $library): SaucerInterface
+    {
+        if ($library !== null) {
+            return new Saucer($library);
+        }
+
+        return Saucer::createFromGlobals();
     }
 
     /**

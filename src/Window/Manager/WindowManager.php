@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Boson\Window\Manager;
 
-use Boson\Api\SaucerInterface;
 use Boson\Application;
+use Boson\Component\Saucer\SaucerInterface;
 use Boson\Component\WeakType\ObservableWeakSet;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Dispatcher\DelegateEventListener;

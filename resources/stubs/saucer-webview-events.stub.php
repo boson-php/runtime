@@ -2,7 +2,7 @@
 
 namespace Boson\Internal\WebView;
 
-use Boson\Internal\Saucer\SaucerState;
+use Boson\Component\Saucer\State;
 use FFI\CData;
 
 /**
@@ -40,7 +40,7 @@ final class CSaucerWebViewEventsStruct extends CData
     public \Closure $onTitleChanged;
 
     /**
-     * @var \Closure(CData, array{SaucerState::SAUCER_STATE_*}):void
+     * @var \Closure(CData, array{State::SAUCER_STATE_*}):void
      */
     public \Closure $onLoad;
 }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Boson\Window\Internal;
 
-use Boson\Api\SaucerInterface;
-use Boson\Internal\Saucer\SaucerPolicy;
-use Boson\Internal\Saucer\SaucerWindowEvent;
+use Boson\Component\Saucer\Policy;
+use Boson\Component\Saucer\SaucerInterface;
+use Boson\Component\Saucer\WindowEvent;
 use Boson\Internal\Window\CSaucerWindowEventsStruct;
 use Boson\Window\Event\WindowClosed;
 use Boson\Window\Event\WindowClosing;
@@ -79,13 +79,13 @@ final readonly class SaucerWindowEventHandler
 
         $ptr = $this->window->id->ptr;
 
-        $this->api->saucer_window_on($ptr, SaucerWindowEvent::SAUCER_WINDOW_EVENT_DECORATED, $handlers->onDecorated);
-        $this->api->saucer_window_on($ptr, SaucerWindowEvent::SAUCER_WINDOW_EVENT_MAXIMIZE, $handlers->onMaximize);
-        $this->api->saucer_window_on($ptr, SaucerWindowEvent::SAUCER_WINDOW_EVENT_MINIMIZE, $handlers->onMinimize);
-        $this->api->saucer_window_on($ptr, SaucerWindowEvent::SAUCER_WINDOW_EVENT_CLOSE, $handlers->onClosing);
-        $this->api->saucer_window_on($ptr, SaucerWindowEvent::SAUCER_WINDOW_EVENT_CLOSED, $handlers->onClosed);
-        $this->api->saucer_window_on($ptr, SaucerWindowEvent::SAUCER_WINDOW_EVENT_RESIZE, $handlers->onResize);
-        $this->api->saucer_window_on($ptr, SaucerWindowEvent::SAUCER_WINDOW_EVENT_FOCUS, $handlers->onFocus);
+        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_DECORATED, $handlers->onDecorated);
+        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_MAXIMIZE, $handlers->onMaximize);
+        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_MINIMIZE, $handlers->onMinimize);
+        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_CLOSE, $handlers->onClosing);
+        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_CLOSED, $handlers->onClosed);
+        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_RESIZE, $handlers->onResize);
+        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_FOCUS, $handlers->onFocus);
     }
 
     private function onDecorated(CData $_, bool $decorated): void
@@ -113,15 +113,15 @@ final readonly class SaucerWindowEventHandler
     }
 
     /**
-     * @return SaucerPolicy::SAUCER_POLICY_*
+     * @return Policy::SAUCER_POLICY_*
      */
     private function onClosing(CData $_): int
     {
         $this->dispatcher->dispatch($intention = new WindowClosing($this->window));
 
         return $intention->isCancelled
-            ? SaucerPolicy::SAUCER_POLICY_BLOCK
-            : SaucerPolicy::SAUCER_POLICY_ALLOW;
+            ? Policy::SAUCER_POLICY_BLOCK
+            : Policy::SAUCER_POLICY_ALLOW;
     }
 
     private function onClosed(CData $_): void

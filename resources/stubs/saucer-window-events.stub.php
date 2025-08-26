@@ -2,6 +2,7 @@
 
 namespace Boson\Internal\Window;
 
+use Boson\Component\Saucer\Policy;
 use FFI\CData;
 
 /**
@@ -29,7 +30,7 @@ final class CSaucerWindowEventsStruct extends CData
     public \Closure $onMinimize;
 
     /**
-     * @var \Closure(CData): SaucerPolicy::SAUCER_POLICY_*
+     * @var \Closure(CData): Policy::SAUCER_POLICY_*
      */
     public \Closure $onClosing;
 

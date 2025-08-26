@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Schemes;
 
-use Boson\Api\SaucerInterface;
+use Boson\Component\Saucer\Launch;
+use Boson\Component\Saucer\SaucerInterface;
+use Boson\Component\Saucer\SchemeError;
 use Boson\Contracts\Http\RequestInterface;
 use Boson\Contracts\Http\ResponseInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Internal\Saucer\SaucerLaunch;
-use Boson\Internal\Saucer\SaucerSchemeError;
 use Boson\Shared\Marker\RequiresDealloc;
 use Boson\WebView\Api\Schemes\Event\SchemeRequestReceived;
 use Boson\WebView\Api\SchemesApiInterface;
@@ -49,7 +49,7 @@ final class SchemesApi extends WebViewExtension implements SchemesApiInterface
                 $this->ptr,
                 $scheme,
                 $this->onSafeRequest(...),
-                SaucerLaunch::SAUCER_LAUNCH_SYNC,
+                Launch::SAUCER_LAUNCH_SYNC,
             );
         }
     }
@@ -59,7 +59,7 @@ final class SchemesApi extends WebViewExtension implements SchemesApiInterface
         try {
             $this->onRequest($_, $request, $executor);
         } catch (\Throwable $e) {
-            $code = SaucerSchemeError::SAUCER_REQUEST_ERROR_FAILED;
+            $code = SchemeError::SAUCER_REQUEST_ERROR_FAILED;
             $this->api->saucer_scheme_executor_reject($executor, $code);
 
             $this->app->poller->defer(static function () use ($e) {
@@ -80,7 +80,7 @@ final class SchemesApi extends WebViewExtension implements SchemesApiInterface
 
             // Abort request in case of intention is cancelled.
             if ($processable === false) {
-                $code = SaucerSchemeError::SAUCER_REQUEST_ERROR_ABORTED;
+                $code = SchemeError::SAUCER_REQUEST_ERROR_ABORTED;
                 $this->api->saucer_scheme_executor_reject($executor, $code);
 
                 return;

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Internal;
 
-use Boson\Api\SaucerInterface;
 use Boson\Component\Http\Request;
-use Boson\Internal\Saucer\SaucerPolicy;
-use Boson\Internal\Saucer\SaucerState;
-use Boson\Internal\Saucer\SaucerWebEvent as Event;
+use Boson\Component\Saucer\Policy;
+use Boson\Component\Saucer\SaucerInterface;
+use Boson\Component\Saucer\State;
+use Boson\Component\Saucer\WebEvent as Event;
 use Boson\Internal\WebView\CSaucerWebViewEventsStruct;
 use Boson\WebView\Event\WebViewDomReady;
 use Boson\WebView\Event\WebViewFaviconChanged;
@@ -184,8 +184,8 @@ final class SaucerWebViewEventHandler
             ));
 
             return $intention->isCancelled
-                ? SaucerPolicy::SAUCER_POLICY_BLOCK
-                : SaucerPolicy::SAUCER_POLICY_ALLOW;
+                ? Policy::SAUCER_POLICY_BLOCK
+                : Policy::SAUCER_POLICY_ALLOW;
         } finally {
             $this->api->saucer_navigation_free($navigation);
         }
@@ -200,7 +200,7 @@ final class SaucerWebViewEventHandler
                 throw $e;
             });
 
-            return SaucerPolicy::SAUCER_POLICY_BLOCK;
+            return Policy::SAUCER_POLICY_BLOCK;
         }
     }
 
@@ -259,7 +259,7 @@ final class SaucerWebViewEventHandler
 
     private function onLoad(CData $_, CData $state): void
     {
-        if ($state[0] === SaucerState::SAUCER_STATE_STARTED) {
+        if ($state[0] === State::SAUCER_STATE_STARTED) {
             $this->changeState(WebViewState::Loading);
 
             return;

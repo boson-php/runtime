@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Window;
 
-use Boson\Api\SaucerInterface;
+use Boson\Component\Saucer\SaucerInterface;
 use Boson\Internal\StructPointerId;
 use FFI\CData;
 

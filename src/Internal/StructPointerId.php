@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Internal;
 
-use Boson\Api\SaucerInterface;
+use Boson\Component\Saucer\SaucerInterface;
 use Boson\Contracts\Id\IntIdInterface;
 use FFI\CData;
 

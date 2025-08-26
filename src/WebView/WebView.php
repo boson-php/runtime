@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Boson\WebView;
 
-use Boson\Api\SaucerInterface;
 use Boson\Component\Http\Request;
+use Boson\Component\Saucer\SaucerInterface;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Contracts\Uri\UriInterface;
