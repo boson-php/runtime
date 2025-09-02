@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Boson;
 
-use Boson\Api\CentralProcessor\CentralProcessorApi;
-use Boson\Api\CentralProcessorApiInterface;
-use Boson\Api\Dialog\DialogApi;
-use Boson\Api\DialogApiInterface;
-use Boson\Api\OperatingSystem\OperatingSystemApi;
-use Boson\Api\OperatingSystemApiInterface;
+use Boson\Api\CentralProcessor\CentralProcessorExtension;
+use Boson\Api\CentralProcessor\CentralProcessorExtensionInterface;
+use Boson\Api\Dialog\DialogExtension;
+use Boson\Api\Dialog\DialogExtensionInterface;
+use Boson\Api\OperatingSystem\OperatingSystemExtension;
+use Boson\Api\OperatingSystem\OperatingSystemExtensionInterface;
 use Boson\Component\Saucer\Saucer;
 use Boson\Component\Saucer\SaucerInterface;
 use Boson\Contracts\EventListener\EventListenerInterface;
@@ -22,6 +22,8 @@ use Boson\Event\ApplicationStarting;
 use Boson\Event\ApplicationStopped;
 use Boson\Event\ApplicationStopping;
 use Boson\Exception\NoDefaultWindowException;
+use Boson\Extension\Exception\ExtensionNotFoundException;
+use Boson\Extension\Registry;
 use Boson\Internal\BootHandler\BootHandlerInterface;
 use Boson\Internal\BootHandler\WindowsDetachConsoleBootHandler;
 use Boson\Internal\DeferRunner\DeferRunnerInterface;
@@ -39,6 +41,7 @@ use Boson\Window\Event\WindowClosed;
 use Boson\Window\Manager\WindowManager;
 use Boson\Window\Window;
 use FFI\CData;
+use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -46,7 +49,8 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  */
 class Application implements
     IdentifiableInterface,
-    EventListenerInterface
+    EventListenerInterface,
+    ContainerInterface
 {
     use EventListenerProvider;
 
@@ -81,17 +85,23 @@ class Application implements
     /**
      * Gets access to the Dialog API of the application.
      */
-    public readonly DialogApiInterface $dialog;
+    public DialogExtensionInterface $dialog {
+        get => $this->dialog ??= $this->extensions->get(DialogExtension::class);
+    }
 
     /**
      * Gets access to the CPU Information API of the application.
      */
-    public readonly CentralProcessorApiInterface $cpu;
+    public CentralProcessorExtensionInterface $cpu {
+        get => $this->cpu ??= $this->extensions->get(CentralProcessorExtension::class);
+    }
 
     /**
      * Gets access to the OS Information API of the application.
      */
-    public readonly OperatingSystemApiInterface $os;
+    public OperatingSystemExtensionInterface $os {
+        get => $this->os ??= $this->extensions->get(OperatingSystemExtension::class);
+    }
 
     /**
      * Provides more convenient and faster access to the
@@ -160,14 +170,19 @@ class Application implements
     public readonly SaucerInterface $saucer;
 
     /**
-     * Application-aware event listener & dispatcher.
-     */
-    private readonly EventListener $listener;
-
-    /**
      * An application poller interface.
      */
     public readonly PollerInterface $poller;
+
+    /**
+     * List of application extensions.
+     */
+    private readonly Registry $extensions;
+
+    /**
+     * Application-aware event listener & dispatcher.
+     */
+    private readonly EventListener $listener;
 
     /**
      * @param EventDispatcherInterface|null $dispatcher an optional event
@@ -204,10 +219,6 @@ class Application implements
         $this->isDebug = $this->createIsDebugParameter($info->debug);
         $this->listener = $this->createEventListener($dispatcher);
 
-        // Initialization of Software Application's API
-        $this->cpu = new CentralProcessorApi($this, $this->listener);
-        $this->os = new OperatingSystemApi($this, $this->listener);
-
         // Kernel initialization
         $this->saucer = $this->createLibSaucer($info->library);
         $this->id = $this->createApplicationId($this->saucer, $this->info->name, $this->info->threads);
@@ -215,7 +226,8 @@ class Application implements
         $this->poller = $this->createApplicationPoller($this->saucer);
 
         // Initialization of Application's API
-        $this->dialog = new DialogApi($this->saucer, $this, $this->listener);
+        $this->extensions = new Registry($this, $this->listener, $info->extensions);
+        $this->extensions->boot();
 
         // Register Application's subsystems
         $this->registerSchemes();
@@ -225,6 +237,27 @@ class Application implements
 
         // Boot the Application
         $this->boot();
+    }
+
+    /**
+     * @template TArgService of object
+     *
+     * @param class-string<TArgService> $id
+     *
+     * @return TArgService
+     * @throws ExtensionNotFoundException
+     */
+    public function get(string $id): object
+    {
+        return $this->extensions->get($id);
+    }
+
+    /**
+     * @param class-string $id
+     */
+    public function has(string $id): bool
+    {
+        return $this->extensions->has($id);
     }
 
     /**

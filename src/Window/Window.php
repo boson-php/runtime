@@ -12,9 +12,11 @@ use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
+use Boson\Extension\Exception\ExtensionNotFoundException;
+use Boson\Extension\Registry;
 use Boson\Shared\Marker\RequiresDealloc;
-use Boson\WebView\Internal\WebViewCreateInfo\FlagsListFormatter;
 use Boson\WebView\WebView;
+use Boson\WebView\WebViewCreateInfo\FlagsListFormatter;
 use Boson\Window\Event\WindowDecorationChanged;
 use Boson\Window\Event\WindowMaximized;
 use Boson\Window\Event\WindowMinimized;
@@ -25,6 +27,7 @@ use Boson\Window\Internal\Size\ManagedWindowMinBounds;
 use Boson\Window\Internal\Size\ManagedWindowSize;
 use Boson\Window\Manager\WindowFactoryInterface;
 use FFI\CData;
+use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -32,7 +35,8 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  */
 final class Window implements
     IdentifiableInterface,
-    EventListenerInterface
+    EventListenerInterface,
+    ContainerInterface
 {
     use EventListenerProvider;
 
@@ -54,6 +58,11 @@ final class Window implements
      * Window aware event listener & dispatcher.
      */
     private readonly EventListener $listener;
+
+    /**
+     * List of window extensions.
+     */
+    private readonly Registry $extensions;
 
     /**
      * The title of the specified window encoded as UTF-8.
@@ -483,13 +492,35 @@ final class Window implements
         $this->handler = self::createSaucerWindowEventHandler($api, $this, $this->listener);
 
         // Initialization of Window's API
-        // ...
+        $this->extensions = new Registry($this, $this->listener, $info->extensions);
+        $this->extensions->boot();
 
         // Register Window's subsystems
         $this->registerDefaultEventListeners();
 
         // Boot the Window
         $this->boot();
+    }
+
+    /**
+     * @template TArgService of object
+     *
+     * @param class-string<TArgService> $id
+     *
+     * @return TArgService
+     * @throws ExtensionNotFoundException
+     */
+    public function get(string $id): object
+    {
+        return $this->extensions->get($id);
+    }
+
+    /**
+     * @param class-string $id
+     */
+    public function has(string $id): bool
+    {
+        return $this->extensions->has($id);
     }
 
     /**

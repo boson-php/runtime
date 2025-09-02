@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Boson;
 
+use Boson\Api\CentralProcessor\CentralProcessorExtensionProvider;
+use Boson\Api\Dialog\DialogExtensionProvider;
+use Boson\Api\OperatingSystem\OperatingSystemExtensionProvider;
+use Boson\Extension\ExtensionProviderInterface;
 use Boson\Window\WindowCreateInfo;
 
 /**
@@ -27,7 +31,14 @@ final readonly class ApplicationCreateInfo
     public array $schemes;
 
     /**
+     * @var list<ExtensionProviderInterface<Application>>
+     */
+    public array $extensions;
+
+    /**
      * @param iterable<mixed, non-empty-string> $schemes list of scheme names
+     * @param iterable<mixed, ExtensionProviderInterface<Application>> $extensions
+     *        list of enabled application extensions
      */
     public function __construct(
         /**
@@ -67,12 +78,28 @@ final readonly class ApplicationCreateInfo
          * Automatically starts the application if set to {@see true}.
          */
         public bool $autorun = true,
+        iterable $extensions = [
+            new CentralProcessorExtensionProvider(),
+            new OperatingSystemExtensionProvider(),
+            new DialogExtensionProvider(),
+        ],
         /**
          * Main (default) window configuration DTO.
          */
         public WindowCreateInfo $window = new WindowCreateInfo(),
     ) {
         $this->schemes = self::schemesToList($schemes);
+        $this->extensions = self::extensionsToList($extensions);
+    }
+
+    /**
+     * @param iterable<mixed, ExtensionProviderInterface<Application>> $extensions
+     *
+     * @return list<ExtensionProviderInterface<Application>>
+     */
+    private static function extensionsToList(iterable $extensions): array
+    {
+        return \iterator_to_array($extensions, false);
     }
 
     /**

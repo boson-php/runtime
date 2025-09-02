@@ -13,30 +13,33 @@ use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
 use Boson\Exception\BosonException;
+use Boson\Extension\Exception\ExtensionNotFoundException;
+use Boson\Extension\Registry;
 use Boson\Shared\Marker\BlockingOperation;
-use Boson\WebView\Api\Battery\BatteryApi;
-use Boson\WebView\Api\BatteryApiInterface;
-use Boson\WebView\Api\Bindings\BindingsApi;
+use Boson\WebView\Api\Battery\BatteryExtension;
+use Boson\WebView\Api\Battery\BatteryExtensionInterface;
+use Boson\WebView\Api\Bindings\BindingsExtension;
+use Boson\WebView\Api\Bindings\BindingsExtensionInterface;
 use Boson\WebView\Api\Bindings\Exception\FunctionAlreadyDefinedException;
-use Boson\WebView\Api\BindingsApiInterface;
-use Boson\WebView\Api\Data\DataApi;
-use Boson\WebView\Api\DataApiInterface;
-use Boson\WebView\Api\Network\NetworkApi;
-use Boson\WebView\Api\NetworkApiInterface;
-use Boson\WebView\Api\Schemes\SchemesApi;
-use Boson\WebView\Api\SchemesApiInterface;
-use Boson\WebView\Api\Scripts\ScriptsApi;
-use Boson\WebView\Api\ScriptsApiInterface;
-use Boson\WebView\Api\Security\SecurityApi;
-use Boson\WebView\Api\SecurityApiInterface;
+use Boson\WebView\Api\Data\DataExtension;
+use Boson\WebView\Api\Data\DataExtensionInterface;
+use Boson\WebView\Api\LifecycleEvents\LifecycleEventsExtension;
+use Boson\WebView\Api\Network\NetworkExtension;
+use Boson\WebView\Api\Network\NetworkExtensionInterface;
+use Boson\WebView\Api\Schemes\SchemesExtension;
+use Boson\WebView\Api\Schemes\SchemesExtensionInterface;
+use Boson\WebView\Api\Scripts\ScriptsExtension;
+use Boson\WebView\Api\Scripts\ScriptsExtensionInterface;
+use Boson\WebView\Api\Security\SecurityExtension;
+use Boson\WebView\Api\Security\SecurityExtensionInterface;
 use Boson\WebView\Api\WebComponents\Exception\ComponentAlreadyDefinedException;
 use Boson\WebView\Api\WebComponents\Exception\WebComponentsApiException;
-use Boson\WebView\Api\WebComponents\WebComponentsApi;
-use Boson\WebView\Api\WebComponentsApiInterface;
-use Boson\WebView\Internal\SaucerWebViewEventHandler;
+use Boson\WebView\Api\WebComponents\WebComponentsExtension;
+use Boson\WebView\Api\WebComponents\WebComponentsExtensionInterface;
 use Boson\Window\Window;
 use Boson\Window\WindowId;
 use JetBrains\PhpStorm\Language;
+use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -44,7 +47,8 @@ use Psr\EventDispatcher\EventDispatcherInterface;
  */
 final class WebView implements
     IdentifiableInterface,
-    EventListenerInterface
+    EventListenerInterface,
+    ContainerInterface
 {
     use EventListenerProvider;
 
@@ -67,12 +71,19 @@ final class WebView implements
     private readonly EventListener $listener;
 
     /**
+     * List of webview extensions.
+     */
+    private readonly Registry $extensions;
+
+    /**
      * Gets access to the Scripts API of the webview.
      *
      * Provides the ability to register a JavaScript code
      * in the webview.
      */
-    public readonly ScriptsApiInterface $scripts;
+    public ScriptsExtensionInterface $scripts {
+        get => $this->scripts ??= $this->extensions->get(ScriptsExtension::class);
+    }
 
     /**
      * Gets access to the Bindings API of the webview.
@@ -80,7 +91,9 @@ final class WebView implements
      * Provides the ability to register PHP functions
      * in the webview.
      */
-    public readonly BindingsApiInterface $bindings;
+    public BindingsExtensionInterface $bindings {
+        get => $this->bindings ??= $this->extensions->get(BindingsExtension::class);
+    }
 
     /**
      * Gets access to the Data API of the webview.
@@ -88,32 +101,44 @@ final class WebView implements
      * Provides the ability to receive variant data from
      * the current document.
      */
-    public readonly DataApiInterface $data;
+    public DataExtensionInterface $data {
+        get => $this->data ??= $this->extensions->get(DataExtension::class);
+    }
 
     /**
      * Gets access to the Security API of the webview.
      */
-    public readonly SecurityApiInterface $security;
+    public SecurityExtensionInterface $security {
+        get => $this->security ??= $this->extensions->get(SecurityExtension::class);
+    }
 
     /**
      * Gets access to the Web Components API of the webview.
      */
-    public readonly WebComponentsApiInterface $components;
+    public WebComponentsExtensionInterface $components {
+        get => $this->components ??= $this->extensions->get(WebComponentsExtension::class);
+    }
 
     /**
      * Gets access to the Battery API of the webview.
      */
-    public readonly BatteryApiInterface $battery;
+    public BatteryExtensionInterface $battery {
+        get => $this->battery ??= $this->extensions->get(BatteryExtension::class);
+    }
 
     /**
      * Gets access to the Network API of the webview.
      */
-    public readonly NetworkApiInterface $network;
+    public NetworkExtensionInterface $network {
+        get => $this->network ??= $this->extensions->get(NetworkExtension::class);
+    }
 
     /**
      * Gets access to the Schemes API of the webview.
      */
-    public readonly SchemesApiInterface $schemes;
+    public SchemesExtensionInterface $schemes {
+        get => $this->schemes ??= $this->extensions->get(SchemesExtension::class);
+    }
 
     /**
      * Contains webview URI instance.
@@ -171,7 +196,7 @@ final class WebView implements
      *
      * @phpstan-ignore property.onlyWritten
      */
-    private readonly SaucerWebViewEventHandler $handler;
+    private readonly LifecycleEventsExtension $handler;
 
     /**
      * @internal Please do not use the constructor directly. There is a
@@ -209,20 +234,34 @@ final class WebView implements
         $this->listener = self::createEventListener($dispatcher);
 
         // Initialization of WebView's API
-        $this->scripts = new ScriptsApi($api, $this, $this->listener);
-        $this->bindings = new BindingsApi($this, $this->listener);
-        $this->data = new DataApi($this, $this->listener);
-        $this->security = new SecurityApi($this, $this->listener);
-        $this->components = new WebComponentsApi($this, $this->listener);
-        $this->battery = new BatteryApi($this, $this->listener);
-        $this->network = new NetworkApi($this, $this->listener);
-        $this->schemes = new SchemesApi($api, $this, $this->listener);
-        $this->handler = new SaucerWebViewEventHandler($api, $this, $this->listener, $this->state);
+        $this->extensions = new Registry($this, $this->listener, $info->extensions);
+        $this->extensions->boot();
 
         // Register WebView's subsystems
 
         // Boot the WebView
         $this->boot();
+    }
+
+    /**
+     * @template TArgService of object
+     *
+     * @param class-string<TArgService> $id
+     *
+     * @return TArgService
+     * @throws ExtensionNotFoundException
+     */
+    public function get(string $id): object
+    {
+        return $this->extensions->get($id);
+    }
+
+    /**
+     * @param class-string $id
+     */
+    public function has(string $id): bool
+    {
+        return $this->extensions->has($id);
     }
 
     /**
@@ -275,7 +314,7 @@ final class WebView implements
     /**
      * Binds a PHP callback to a new global JavaScript function.
      *
-     * Note: This is facade method of the {@see BindingsApi::bind()},
+     * Note: This is facade method of the {@see BindingsExtension::bind()},
      *       that provides by the {@see $bindings} field. This means that
      *       calling `$webview->functions->bind(...)` should have the same effect.
      *
@@ -285,7 +324,7 @@ final class WebView implements
      *
      * @throws FunctionAlreadyDefinedException in case of function binding error
      *
-     * @uses BindingsApiInterface::bind() WebView Functions API
+     * @uses BindingsExtensionInterface::bind() WebView Functions API
      */
     public function bind(string $function, \Closure $callback): void
     {
@@ -295,7 +334,7 @@ final class WebView implements
     /**
      * Evaluates arbitrary JavaScript code.
      *
-     * Note: This is facade method of the {@see ScriptsApi::eval()},
+     * Note: This is facade method of the {@see ScriptsExtension::eval()},
      *       that provides by the {@see $scripts} field. This means that
      *       calling `$webview->scripts->eval(...)` should have the same effect.
      *
@@ -303,7 +342,7 @@ final class WebView implements
      *
      * @param string $code A JavaScript code for execution
      *
-     * @uses ScriptsApiInterface::eval() WebView Scripts API
+     * @uses ScriptsExtensionInterface::eval() WebView Scripts API
      */
     public function eval(#[Language('JavaScript')] string $code): void
     {
@@ -313,7 +352,7 @@ final class WebView implements
     /**
      * Requests arbitrary data from webview using JavaScript code.
      *
-     * Note: This is facade method of the {@see DataApi::get()},
+     * Note: This is facade method of the {@see DataExtension::get()},
      *       that provides by the {@see $data} field. This means that
      *       calling `$webview->requests->send(...)` should have the same effect.
      *
@@ -321,10 +360,10 @@ final class WebView implements
      *
      * @param string $code A JavaScript code for execution
      *
-     * @uses DataApiInterface::get() WebView Requests API
+     * @uses DataExtensionInterface::get() WebView Requests API
      */
     #[BlockingOperation]
-    public function get(#[Language('JavaScript')] string $code, ?float $timeout = null): mixed
+    public function data(#[Language('JavaScript')] string $code, ?float $timeout = null): mixed
     {
         return $this->data->get($code, $timeout);
     }
@@ -340,7 +379,7 @@ final class WebView implements
      * @throws ComponentAlreadyDefinedException if a component with the given name is already registered
      * @throws WebComponentsApiException if any other registration error occurs
      *
-     * @uses WebComponentsApiInterface::add() WebView Web Components API
+     * @uses WebComponentsExtensionInterface::add() WebView Web Components API
      */
     public function defineComponent(string $name, string $component): void
     {

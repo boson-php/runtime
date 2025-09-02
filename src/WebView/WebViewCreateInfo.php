@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Boson\WebView;
 
 use Boson\Application;
-use Boson\WebView\Api\BatteryApiCreateInfo;
-use Boson\WebView\Api\BindingsApiCreateInfo;
-use Boson\WebView\Api\DataApiCreateInfo;
-use Boson\WebView\Api\NetworkApiCreateInfo;
-use Boson\WebView\Api\WebComponentsCreateInfo;
-use Boson\WebView\Internal\WebViewCreateInfo\StorageDirectoryResolver;
+use Boson\Extension\ExtensionProviderInterface;
+use Boson\WebView\Api\Battery\BatteryExtensionProvider;
+use Boson\WebView\Api\Bindings\BindingsExtensionProvider;
+use Boson\WebView\Api\Data\DataExtensionProvider;
+use Boson\WebView\Api\LifecycleEvents\LifecycleEventsExtensionProvider;
+use Boson\WebView\Api\Network\NetworkExtensionProvider;
+use Boson\WebView\Api\Schemes\SchemesExtensionProvider;
+use Boson\WebView\Api\Scripts\ScriptsExtensionProvider;
+use Boson\WebView\Api\Security\SecurityExtensionProvider;
+use Boson\WebView\Api\WebComponents\WebComponentsExtensionProvider;
+use Boson\WebView\WebViewCreateInfo\StorageDirectoryResolver;
 
 /**
  * Information (configuration) about creating a new webview object.
@@ -71,6 +76,11 @@ final readonly class WebViewCreateInfo
     public array $flags;
 
     /**
+     * @var list<ExtensionProviderInterface<WebView>>
+     */
+    public array $extensions;
+
+    /**
      * @param non-empty-string|null $storage See {@see WebViewCreateInfo::$storage}
      *        field description.
      *
@@ -83,6 +93,8 @@ final readonly class WebViewCreateInfo
      *          data) will be disabled.
      * @param iterable<non-empty-string, string|float|bool|int|list<string|float|bool|int>> $flags
      *        See the {@see $flags} property description for information
+     * @param iterable<mixed, ExtensionProviderInterface<WebView>> $extensions
+     *         list of enabled webview extensions
      */
     public function __construct(
         /**
@@ -113,28 +125,40 @@ final readonly class WebViewCreateInfo
          *  - Dev Tools will bew disabled if debug mode is disabled.
          */
         public ?bool $devTools = null,
-        /**
-         * Contains Battery API configuration options.
-         */
-        public BatteryApiCreateInfo $battery = new BatteryApiCreateInfo(),
-        /**
-         * Contains Network API configuration options.
-         */
-        public NetworkApiCreateInfo $network = new NetworkApiCreateInfo(),
-        /**
-         * Contains Bindings API configuration options.
-         */
-        public BindingsApiCreateInfo $bindings = new BindingsApiCreateInfo(),
-        /**
-         * Contains Data API configuration options.
-         */
-        public DataApiCreateInfo $data = new DataApiCreateInfo(),
-        /**
-         * Contains Web Components API configuration options.
-         */
-        public WebComponentsCreateInfo $webComponents = new WebComponentsCreateInfo(),
+        iterable $extensions = [
+            new ScriptsExtensionProvider(),
+            new BindingsExtensionProvider(),
+            new DataExtensionProvider(),
+            new SecurityExtensionProvider(),
+            new BatteryExtensionProvider(),
+            new WebComponentsExtensionProvider(),
+            new NetworkExtensionProvider(),
+            new SchemesExtensionProvider(),
+            new LifecycleEventsExtensionProvider(),
+        ],
     ) {
         $this->storage = StorageDirectoryResolver::resolve($storage);
-        $this->flags = \iterator_to_array($flags, true);
+        $this->flags = self::flagsToList($flags);
+        $this->extensions = self::extensionsToList($extensions);
+    }
+
+    /**
+     * @param iterable<non-empty-string, string|float|bool|int|list<string|float|bool|int>> $flags
+     *
+     * @return array<non-empty-string, string|float|bool|int|list<string|float|bool|int>>
+     */
+    private static function flagsToList(iterable $flags): array
+    {
+        return \iterator_to_array($flags, false);
+    }
+
+    /**
+     * @param iterable<mixed, ExtensionProviderInterface<WebView>> $extensions
+     *
+     * @return list<ExtensionProviderInterface<WebView>>
+     */
+    private static function extensionsToList(iterable $extensions): array
+    {
+        return \iterator_to_array($extensions, false);
     }
 }

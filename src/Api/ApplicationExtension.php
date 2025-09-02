@@ -7,6 +7,7 @@ namespace Boson\Api;
 use Boson\Application;
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
+use Boson\Extension\Extension;
 use Boson\Internal\StructPointerId;
 use FFI\CData;
 

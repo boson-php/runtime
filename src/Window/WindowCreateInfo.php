@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Window;
 
+use Boson\Extension\ExtensionProviderInterface;
 use Boson\WebView\WebViewCreateInfo;
 
 /**
@@ -21,6 +22,15 @@ final readonly class WindowCreateInfo
      */
     public const int DEFAULT_HEIGHT = 480;
 
+    /**
+     * @var list<ExtensionProviderInterface<Window>>
+     */
+    public array $extensions;
+
+    /**
+     * @param iterable<mixed, ExtensionProviderInterface<Window>> $extensions
+     *        list of enabled window extensions
+     */
     public function __construct(
         /**
          * Sets initial window title.
@@ -69,6 +79,7 @@ final readonly class WindowCreateInfo
          * transparency and so on...
          */
         public WindowDecoration $decoration = WindowDecoration::Default,
+        iterable $extensions = [],
         /**
          * Information (configuration) about creating a new webview object
          * that will be attached to the window.
@@ -82,5 +93,17 @@ final readonly class WindowCreateInfo
         assert($height >= 0 && $height <= 2147483647, new \InvalidArgumentException(
             message: 'Window height CAN NOT be less than 0 or greater than 2147483647',
         ));
+
+        $this->extensions = self::extensionsToList($extensions);
+    }
+
+    /**
+     * @param iterable<mixed, ExtensionProviderInterface<Window>> $extensions
+     *
+     * @return list<ExtensionProviderInterface<Window>>
+     */
+    private static function extensionsToList(iterable $extensions): array
+    {
+        return \iterator_to_array($extensions, false);
     }
 }
