@@ -7,15 +7,15 @@ namespace Boson\Api\CentralProcessor;
 use Boson\Application;
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\ExtensionProvider;
 
 /**
- * @template-implements ExtensionProviderInterface<Application>
+ * @template-extends ExtensionProvider<Application>
  */
-final class CentralProcessorExtensionProvider implements ExtensionProviderInterface
+#[AvailableAs(['cpu', CentralProcessorExtensionInterface::class])]
+final class CentralProcessorExtensionProvider extends ExtensionProvider
 {
-    public array $dependencies = [];
-
     public function load(IdentifiableInterface $ctx, EventListener $listener): CentralProcessorExtension
     {
         return new CentralProcessorExtension($ctx, $listener);

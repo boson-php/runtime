@@ -16,25 +16,15 @@ use Boson\Exception\BosonException;
 use Boson\Extension\Exception\ExtensionNotFoundException;
 use Boson\Extension\Registry;
 use Boson\Shared\Marker\BlockingOperation;
-use Boson\WebView\Api\Battery\BatteryExtension;
-use Boson\WebView\Api\Battery\BatteryExtensionInterface;
 use Boson\WebView\Api\Bindings\BindingsExtension;
 use Boson\WebView\Api\Bindings\BindingsExtensionInterface;
 use Boson\WebView\Api\Bindings\Exception\FunctionAlreadyDefinedException;
 use Boson\WebView\Api\Data\DataExtension;
 use Boson\WebView\Api\Data\DataExtensionInterface;
-use Boson\WebView\Api\LifecycleEvents\LifecycleEventsExtension;
-use Boson\WebView\Api\Network\NetworkExtension;
-use Boson\WebView\Api\Network\NetworkExtensionInterface;
-use Boson\WebView\Api\Schemes\SchemesExtension;
-use Boson\WebView\Api\Schemes\SchemesExtensionInterface;
 use Boson\WebView\Api\Scripts\ScriptsExtension;
 use Boson\WebView\Api\Scripts\ScriptsExtensionInterface;
-use Boson\WebView\Api\Security\SecurityExtension;
-use Boson\WebView\Api\Security\SecurityExtensionInterface;
 use Boson\WebView\Api\WebComponents\Exception\ComponentAlreadyDefinedException;
 use Boson\WebView\Api\WebComponents\Exception\WebComponentsApiException;
-use Boson\WebView\Api\WebComponents\WebComponentsExtension;
 use Boson\WebView\Api\WebComponents\WebComponentsExtensionInterface;
 use Boson\Window\Window;
 use Boson\Window\WindowId;
@@ -45,6 +35,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 /**
  * @template-implements IdentifiableInterface<WebViewId>
  */
+#[\AllowDynamicProperties]
 final class WebView implements
     IdentifiableInterface,
     EventListenerInterface,
@@ -62,86 +53,15 @@ final class WebView implements
      *
      * In terms of implementation, it is equals to
      * the {@see WindowId} Window's ID.
+     *
+     * @api
      */
     public readonly WebViewId $id;
 
     /**
-     * WebView-aware event listener & dispatcher.
-     */
-    private readonly EventListener $listener;
-
-    /**
-     * List of webview extensions.
-     */
-    private readonly Registry $extensions;
-
-    /**
-     * Gets access to the Scripts API of the webview.
-     *
-     * Provides the ability to register a JavaScript code
-     * in the webview.
-     */
-    public ScriptsExtensionInterface $scripts {
-        get => $this->scripts ??= $this->extensions->get(ScriptsExtension::class);
-    }
-
-    /**
-     * Gets access to the Bindings API of the webview.
-     *
-     * Provides the ability to register PHP functions
-     * in the webview.
-     */
-    public BindingsExtensionInterface $bindings {
-        get => $this->bindings ??= $this->extensions->get(BindingsExtension::class);
-    }
-
-    /**
-     * Gets access to the Data API of the webview.
-     *
-     * Provides the ability to receive variant data from
-     * the current document.
-     */
-    public DataExtensionInterface $data {
-        get => $this->data ??= $this->extensions->get(DataExtension::class);
-    }
-
-    /**
-     * Gets access to the Security API of the webview.
-     */
-    public SecurityExtensionInterface $security {
-        get => $this->security ??= $this->extensions->get(SecurityExtension::class);
-    }
-
-    /**
-     * Gets access to the Web Components API of the webview.
-     */
-    public WebComponentsExtensionInterface $components {
-        get => $this->components ??= $this->extensions->get(WebComponentsExtension::class);
-    }
-
-    /**
-     * Gets access to the Battery API of the webview.
-     */
-    public BatteryExtensionInterface $battery {
-        get => $this->battery ??= $this->extensions->get(BatteryExtension::class);
-    }
-
-    /**
-     * Gets access to the Network API of the webview.
-     */
-    public NetworkExtensionInterface $network {
-        get => $this->network ??= $this->extensions->get(NetworkExtension::class);
-    }
-
-    /**
-     * Gets access to the Schemes API of the webview.
-     */
-    public SchemesExtensionInterface $schemes {
-        get => $this->schemes ??= $this->extensions->get(SchemesExtension::class);
-    }
-
-    /**
      * Contains webview URI instance.
+     *
+     * @api
      */
     public UriInterface $url {
         /**
@@ -152,7 +72,7 @@ final class WebView implements
          * ```
          */
         get {
-            $result = $this->api->saucer_webview_url($this->id->ptr);
+            $result = $this->saucer->saucer_webview_url($this->id->ptr);
 
             try {
                 return Request::castUrl(\FFI::string($result));
@@ -170,12 +90,14 @@ final class WebView implements
          * ```
          */
         set(\Stringable|string $value) {
-            $this->api->saucer_webview_set_url($this->id->ptr, (string) $value);
+            $this->saucer->saucer_webview_set_url($this->id->ptr, (string) $value);
         }
     }
 
     /**
      * Load HTML content into the WebView.
+     *
+     * @api
      */
     public string $html {
         set(#[Language('HTML')] \Stringable|string $html) {
@@ -187,16 +109,22 @@ final class WebView implements
 
     /**
      * Gets webview status.
+     *
+     * @api
      */
     public private(set) WebViewState $state = WebViewState::Loading;
 
     /**
-     * Contains an internal bridge between {@see SaucerInterface} events system
-     * and the PSR {@see WebView::$events} dispatcher.
-     *
-     * @phpstan-ignore property.onlyWritten
+     * WebView-aware event listener & dispatcher.
      */
-    private readonly LifecycleEventsExtension $handler;
+    private readonly EventListener $listener;
+
+    /**
+     * List of webview extensions.
+     *
+     * @var Registry<WebView>
+     */
+    private readonly Registry $extensions;
 
     /**
      * @internal Please do not use the constructor directly. There is a
@@ -217,7 +145,7 @@ final class WebView implements
         /**
          * Contains shared WebView API library.
          */
-        private readonly SaucerInterface $api,
+        private readonly SaucerInterface $saucer,
         /**
          * Gets parent application window instance to which
          * this webview instance belongs.
@@ -235,7 +163,11 @@ final class WebView implements
 
         // Initialization of WebView's API
         $this->extensions = new Registry($this, $this->listener, $info->extensions);
-        $this->extensions->boot();
+        foreach ($this->extensions->boot() as $property => $extension) {
+            // Direct access to dynamic property is 5+ times
+            // faster than magic `__get` call.
+            $this->__set($property, $extension);
+        }
 
         // Register WebView's subsystems
 
@@ -246,9 +178,9 @@ final class WebView implements
     /**
      * @template TArgService of object
      *
-     * @param class-string<TArgService> $id
+     * @param class-string<TArgService>|string $id
      *
-     * @return TArgService
+     * @return ($id is class-string<TArgService> ? TArgService : object)
      * @throws ExtensionNotFoundException
      */
     public function get(string $id): object
@@ -256,9 +188,6 @@ final class WebView implements
         return $this->extensions->get($id);
     }
 
-    /**
-     * @param class-string $id
-     */
     public function has(string $id): bool
     {
         return $this->extensions->has($id);
@@ -294,6 +223,11 @@ final class WebView implements
      */
     private function loadRuntimeScripts(): void
     {
+        if (!$this->has(ScriptsExtensionInterface::class)) {
+            return;
+        }
+
+        $scripts = $this->get(ScriptsExtensionInterface::class);
         $filesystem = new \FilesystemIterator(self::PRELOADED_SCRIPTS_DIRECTORY);
 
         foreach ($filesystem as $script) {
@@ -307,7 +241,8 @@ final class WebView implements
                 throw new BosonException(\sprintf('Unable to read %s', $script->getPathname()));
             }
 
-            $this->scripts->preload($code, true);
+            /** @phpstan-ignore-next-line : Allow second parameter */
+            $scripts->preload($code, true);
         }
     }
 
@@ -324,10 +259,13 @@ final class WebView implements
      *
      * @throws FunctionAlreadyDefinedException in case of function binding error
      *
+     * @deprecated please use `$webview->bindings->bind()` instead
+     *
      * @uses BindingsExtensionInterface::bind() WebView Functions API
      */
     public function bind(string $function, \Closure $callback): void
     {
+        /** @phpstan-ignore-next-line : Allow dynamic property access */
         $this->bindings->bind($function, $callback);
     }
 
@@ -342,10 +280,13 @@ final class WebView implements
      *
      * @param string $code A JavaScript code for execution
      *
+     * @deprecated please use `$webview->scripts->eval()` instead
+     *
      * @uses ScriptsExtensionInterface::eval() WebView Scripts API
      */
     public function eval(#[Language('JavaScript')] string $code): void
     {
+        /** @phpstan-ignore-next-line : Allow dynamic property access */
         $this->scripts->eval($code);
     }
 
@@ -360,11 +301,14 @@ final class WebView implements
      *
      * @param string $code A JavaScript code for execution
      *
+     * @deprecated please use `$webview->data->get()` instead
+     *
      * @uses DataExtensionInterface::get() WebView Requests API
      */
     #[BlockingOperation]
     public function data(#[Language('JavaScript')] string $code, ?float $timeout = null): mixed
     {
+        /** @phpstan-ignore-next-line : Allow dynamic property access */
         return $this->data->get($code, $timeout);
     }
 
@@ -379,10 +323,13 @@ final class WebView implements
      * @throws ComponentAlreadyDefinedException if a component with the given name is already registered
      * @throws WebComponentsApiException if any other registration error occurs
      *
+     * @deprecated please use `$webview->components->add()` instead
+     *
      * @uses WebComponentsExtensionInterface::add() WebView Web Components API
      */
     public function defineComponent(string $name, string $component): void
     {
+        /** @phpstan-ignore-next-line : Allow dynamic property access */
         $this->components->add($name, $component);
     }
 
@@ -393,7 +340,7 @@ final class WebView implements
      */
     public function forward(): void
     {
-        $this->api->saucer_webview_forward($this->id->ptr);
+        $this->saucer->saucer_webview_forward($this->id->ptr);
     }
 
     /**
@@ -403,7 +350,7 @@ final class WebView implements
      */
     public function back(): void
     {
-        $this->api->saucer_webview_back($this->id->ptr);
+        $this->saucer->saucer_webview_back($this->id->ptr);
     }
 
     /**
@@ -413,6 +360,28 @@ final class WebView implements
      */
     public function reload(): void
     {
-        $this->api->saucer_webview_reload($this->id->ptr);
+        $this->saucer->saucer_webview_reload($this->id->ptr);
+    }
+
+    public function __get(string $name): object
+    {
+        return $this->extensions->get($name);
+    }
+
+    public function __isset(string $name): bool
+    {
+        return $this->extensions->has($name);
+    }
+
+    public function __set(string $name, mixed $value): void
+    {
+        $context = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? null;
+
+        if ($context !== self::class) {
+            throw new \Error(\sprintf('Cannot create dynamic property %s::$%s', static::class, $name));
+        }
+
+        /** @phpstan-ignore property.dynamicName */
+        $this->$name = $value;
     }
 }

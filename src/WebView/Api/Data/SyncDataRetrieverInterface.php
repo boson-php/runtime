@@ -7,6 +7,7 @@ namespace Boson\WebView\Api\Data;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\WebView\Api\Data\Exception\ApplicationNotRunningException;
 use Boson\WebView\Api\Data\Exception\StalledRequestException;
+use Boson\WebView\Api\Data\Exception\WebViewIsNotReadyException;
 use JetBrains\PhpStorm\Language;
 
 interface SyncDataRetrieverInterface
@@ -29,6 +30,7 @@ interface SyncDataRetrieverInterface
      *
      * @return mixed The response from the JavaScript execution
      * @throws ApplicationNotRunningException if the request cannot be processed
+     * @throws WebViewIsNotReadyException if there is no ready DOM
      * @throws StalledRequestException if the request times out
      */
     #[BlockingOperation]

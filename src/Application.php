@@ -4,12 +4,6 @@ declare(strict_types=1);
 
 namespace Boson;
 
-use Boson\Api\CentralProcessor\CentralProcessorExtension;
-use Boson\Api\CentralProcessor\CentralProcessorExtensionInterface;
-use Boson\Api\Dialog\DialogExtension;
-use Boson\Api\Dialog\DialogExtensionInterface;
-use Boson\Api\OperatingSystem\OperatingSystemExtension;
-use Boson\Api\OperatingSystem\OperatingSystemExtensionInterface;
 use Boson\Component\Saucer\Saucer;
 use Boson\Component\Saucer\SaucerInterface;
 use Boson\Contracts\EventListener\EventListenerInterface;
@@ -47,6 +41,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 /**
  * @template-implements IdentifiableInterface<ApplicationId>
  */
+#[\AllowDynamicProperties]
 class Application implements
     IdentifiableInterface,
     EventListenerInterface,
@@ -74,34 +69,17 @@ class Application implements
      * It is worth noting that the destruction of this object
      * from memory (deallocation using PHP GC) means the physical
      * destruction of all data associated with it, including unmanaged.
+     *
+     * @api
      */
     public readonly ApplicationId $id;
 
     /**
      * Gets windows list and methods for working with windows.
+     *
+     * @api
      */
     public readonly WindowManager $windows;
-
-    /**
-     * Gets access to the Dialog API of the application.
-     */
-    public DialogExtensionInterface $dialog {
-        get => $this->dialog ??= $this->extensions->get(DialogExtension::class);
-    }
-
-    /**
-     * Gets access to the CPU Information API of the application.
-     */
-    public CentralProcessorExtensionInterface $cpu {
-        get => $this->cpu ??= $this->extensions->get(CentralProcessorExtension::class);
-    }
-
-    /**
-     * Gets access to the OS Information API of the application.
-     */
-    public OperatingSystemExtensionInterface $os {
-        get => $this->os ??= $this->extensions->get(OperatingSystemExtension::class);
-    }
 
     /**
      * Provides more convenient and faster access to the
@@ -109,6 +87,8 @@ class Application implements
      * child {@see $windows} property.
      *
      * @uses WindowManager::$default Default (first) window of the windows list
+     *
+     * @api
      */
     public Window $window {
         /**
@@ -126,6 +106,8 @@ class Application implements
      * subsystem from {@see $window} property.
      *
      * @uses Window::$webview The webview of the default (first) window
+     *
+     * @api
      */
     public WebView $webview {
         /**
@@ -145,6 +127,8 @@ class Application implements
      *
      * Contains {@see true} in case of debug mode
      * is enabled or {@see false} instead.
+     *
+     * @api
      */
     public readonly bool $isDebug;
 
@@ -153,16 +137,15 @@ class Application implements
      *
      * Contains {@see true} in case of application is running
      * or {@see false} instead.
+     *
+     * @api
      */
     public private(set) bool $isRunning = false;
 
     /**
-     * Indicates whether the application was ever running
-     */
-    private bool $wasEverRunning = false;
-
-    /**
      * Shared WebView API library.
+     *
+     * @api
      *
      * @internal Not safe, you can get segfault, use
      *           this low-level API at your own risk!
@@ -171,11 +154,22 @@ class Application implements
 
     /**
      * An application poller interface.
+     *
+     * @api
      */
     public readonly PollerInterface $poller;
 
     /**
+     * Indicates whether the application was ever running.
+     *
+     * @api
+     */
+    private bool $wasEverRunning = false;
+
+    /**
      * List of application extensions.
+     *
+     * @var Registry<Application>
      */
     private readonly Registry $extensions;
 
@@ -227,7 +221,11 @@ class Application implements
 
         // Initialization of Application's API
         $this->extensions = new Registry($this, $this->listener, $info->extensions);
-        $this->extensions->boot();
+        foreach ($this->extensions->boot() as $property => $extension) {
+            // Direct access to dynamic property is 5+ times
+            // faster than magic `__get` call.
+            $this->__set($property, $extension);
+        }
 
         // Register Application's subsystems
         $this->registerSchemes();
@@ -242,9 +240,9 @@ class Application implements
     /**
      * @template TArgService of object
      *
-     * @param class-string<TArgService> $id
+     * @param class-string<TArgService>|string $id
      *
-     * @return TArgService
+     * @return ($id is class-string<TArgService> ? TArgService : object)
      * @throws ExtensionNotFoundException
      */
     public function get(string $id): object
@@ -252,9 +250,6 @@ class Application implements
         return $this->extensions->get($id);
     }
 
-    /**
-     * @param class-string $id
-     */
     public function has(string $id): bool
     {
         return $this->extensions->has($id);
@@ -594,5 +589,27 @@ class Application implements
     {
         $this->saucer->saucer_application_quit($this->id->ptr);
         $this->saucer->saucer_application_free($this->id->ptr);
+    }
+
+    public function __get(string $name): object
+    {
+        return $this->extensions->get($name);
+    }
+
+    public function __isset(string $name): bool
+    {
+        return $this->extensions->has($name);
+    }
+
+    public function __set(string $name, mixed $value): void
+    {
+        $context = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? null;
+
+        if ($context !== self::class) {
+            throw new \Error(\sprintf('Cannot create dynamic property %s::$%s', static::class, $name));
+        }
+
+        /** @phpstan-ignore property.dynamicName */
+        $this->$name = $value;
     }
 }

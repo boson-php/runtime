@@ -7,15 +7,15 @@ namespace Boson\Api\OperatingSystem;
 use Boson\Application;
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\ExtensionProvider;
 
 /**
- * @template-implements ExtensionProviderInterface<Application>
+ * @template-extends ExtensionProvider<Application>
  */
-final class OperatingSystemExtensionProvider implements ExtensionProviderInterface
+#[AvailableAs(['os', OperatingSystemExtensionInterface::class])]
+final class OperatingSystemExtensionProvider extends ExtensionProvider
 {
-    public array $dependencies = [];
-
     public function load(IdentifiableInterface $ctx, EventListener $listener): OperatingSystemExtension
     {
         return new OperatingSystemExtension($ctx, $listener);

@@ -6,7 +6,6 @@ namespace Boson\WebView;
 
 use Boson\Application;
 use Boson\Extension\ExtensionProviderInterface;
-use Boson\WebView\Api\Battery\BatteryExtensionProvider;
 use Boson\WebView\Api\Bindings\BindingsExtensionProvider;
 use Boson\WebView\Api\Data\DataExtensionProvider;
 use Boson\WebView\Api\LifecycleEvents\LifecycleEventsExtensionProvider;
@@ -17,11 +16,34 @@ use Boson\WebView\Api\Security\SecurityExtensionProvider;
 use Boson\WebView\Api\WebComponents\WebComponentsExtensionProvider;
 use Boson\WebView\WebViewCreateInfo\StorageDirectoryResolver;
 
+//
+// Note:
+// 1) This "$_" assign hack removes these constants from IDE autocomplete.
+// 2) Only define-like constants allows object instances.
+//
+\define($_ = 'Boson\WebView\DEFAULT_WEBVIEW_EXTENSIONS', [
+    new ScriptsExtensionProvider(),
+    new BindingsExtensionProvider(),
+    new DataExtensionProvider(),
+    new SecurityExtensionProvider(),
+    new WebComponentsExtensionProvider(),
+    new NetworkExtensionProvider(),
+    new SchemesExtensionProvider(),
+    new LifecycleEventsExtensionProvider(),
+]);
+
 /**
  * Information (configuration) about creating a new webview object.
  */
 final readonly class WebViewCreateInfo
 {
+    /**
+     * @var list<ExtensionProviderInterface<WebView>>
+     *
+     * @noinspection PhpUndefinedConstantInspection
+     */
+    public const array DEFAULT_WEBVIEW_EXTENSIONS = DEFAULT_WEBVIEW_EXTENSIONS;
+
     /**
      * Path to directory with temporary files (WebView configuration
      * and session) files.
@@ -125,17 +147,7 @@ final readonly class WebViewCreateInfo
          *  - Dev Tools will bew disabled if debug mode is disabled.
          */
         public ?bool $devTools = null,
-        iterable $extensions = [
-            new ScriptsExtensionProvider(),
-            new BindingsExtensionProvider(),
-            new DataExtensionProvider(),
-            new SecurityExtensionProvider(),
-            new BatteryExtensionProvider(),
-            new WebComponentsExtensionProvider(),
-            new NetworkExtensionProvider(),
-            new SchemesExtensionProvider(),
-            new LifecycleEventsExtensionProvider(),
-        ],
+        iterable $extensions = self::DEFAULT_WEBVIEW_EXTENSIONS,
     ) {
         $this->storage = StorageDirectoryResolver::resolve($storage);
         $this->flags = self::flagsToList($flags);
@@ -149,7 +161,7 @@ final readonly class WebViewCreateInfo
      */
     private static function flagsToList(iterable $flags): array
     {
-        return \iterator_to_array($flags, false);
+        return \iterator_to_array($flags, true);
     }
 
     /**

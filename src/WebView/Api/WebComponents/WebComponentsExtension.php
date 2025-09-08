@@ -6,6 +6,7 @@ namespace Boson\WebView\Api\WebComponents;
 
 use Boson\Dispatcher\EventListener;
 use Boson\WebView\Api\Bindings\BindingsExtensionInterface;
+use Boson\WebView\Api\Data\DataExtensionInterface;
 use Boson\WebView\Api\Scripts\ScriptsExtensionInterface;
 use Boson\WebView\Api\WebComponents\Component\HasAttributesInterface;
 use Boson\WebView\Api\WebComponents\Component\HasClassNameInterface;
@@ -127,6 +128,7 @@ final class WebComponentsExtension extends WebViewExtension implements
         WebComponentsExtensionCreateInfo $info,
         private readonly BindingsExtensionInterface $bindings,
         private readonly ScriptsExtensionInterface $scripts,
+        private readonly DataExtensionInterface $data,
     ) {
         parent::__construct($context, $listener);
 
@@ -135,6 +137,8 @@ final class WebComponentsExtension extends WebViewExtension implements
         $this->instances = new WebViewComponentInstances(
             webview: $context,
             instantiator: $info->instantiator,
+            data: $this->data,
+            scripts: $this->scripts,
         );
 
         $this->builder = new WebViewComponentBuilder(

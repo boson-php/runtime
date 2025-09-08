@@ -6,6 +6,7 @@ namespace Boson\Extension;
 
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
+use Boson\Extension\Exception\ExtensionAlreadyLoadedException;
 use Boson\Extension\Exception\ExtensionLoadingException;
 use Boson\Extension\Exception\ExtensionNotFoundException;
 use Boson\Extension\Loader\DependencyGraph;
@@ -17,7 +18,7 @@ use Psr\Container\ContainerInterface;
 final class Registry implements ContainerInterface
 {
     /**
-     * @var list<object>
+     * @var array<non-empty-string, object>
      */
     private array $extensions = [];
 
@@ -25,6 +26,11 @@ final class Registry implements ContainerInterface
      * @var list<ExtensionProviderInterface<TContext>>
      */
     private array $providers = [];
+
+    /**
+     * @var array<non-empty-string, object>
+     */
+    private array $properties = [];
 
     private bool $booted = false;
 
@@ -43,12 +49,13 @@ final class Registry implements ContainerInterface
     }
 
     /**
+     * @return array<non-empty-string, object>
      * @throws ExtensionLoadingException
      */
-    public function boot(): void
+    public function boot(): array
     {
         if ($this->booted === true) {
-            return;
+            return $this->properties;
         }
 
         foreach (new DependencyGraph($this->providers) as $provider) {
@@ -59,29 +66,51 @@ final class Registry implements ContainerInterface
             }
 
             $this->extensions[$extension::class] = $extension;
+
+            foreach ($provider->aliases as $alias) {
+                if (isset($this->extensions[$alias]) && $alias !== $extension::class) {
+                    throw ExtensionAlreadyLoadedException::becauseExtensionAlreadyLoaded($alias);
+                }
+
+                if ($this->isProperty($alias)) {
+                    $this->properties[$alias] = $extension;
+                }
+
+                $this->extensions[$alias] = $extension;
+            }
         }
 
         $this->providers = [];
         $this->booted = true;
+
+        return $this->properties;
+    }
+
+    private function isProperty(string $name): bool
+    {
+        if ($name === '') {
+            return false;
+        }
+
+        \preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$/isu', $name, $matches);
+
+        return isset($matches[0]);
     }
 
     /**
      * @template TArgService of object
      *
-     * @param class-string<TArgService> $id
+     * @param class-string<TArgService>|string $id
      *
-     * @return TArgService
+     * @return ($id is class-string<TArgService> ? TArgService : object)
      * @throws ExtensionNotFoundException
      */
     public function get(string $id): object
     {
         return $this->extensions[$id]
-            ?? throw ExtensionNotFoundException::becauseExceptionNotFound($id);
+            ?? throw ExtensionNotFoundException::becauseExtensionNotFound($id);
     }
 
-    /**
-     * @param class-string $id
-     */
     public function has(string $id): bool
     {
         return isset($this->extensions[$id]);

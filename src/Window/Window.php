@@ -33,6 +33,7 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 /**
  * @template-implements IdentifiableInterface<WindowId>
  */
+#[\AllowDynamicProperties]
 final class Window implements
     IdentifiableInterface,
     EventListenerInterface,
@@ -46,36 +47,34 @@ final class Window implements
      * It is worth noting that the destruction of this object
      * from memory (deallocation using PHP GC) means the physical
      * destruction of all data associated with it, including unmanaged.
+     *
+     * @api
      */
     public readonly WindowId $id;
 
     /**
      * Gets child webview instance attached to the window.
+     *
+     * @api
      */
     public readonly WebView $webview;
 
     /**
-     * Window aware event listener & dispatcher.
-     */
-    private readonly EventListener $listener;
-
-    /**
-     * List of window extensions.
-     */
-    private readonly Registry $extensions;
-
-    /**
      * The title of the specified window encoded as UTF-8.
+     *
+     * @api
      */
     public string $title {
         get => $this->title ??= $this->getCurrentWindowTitle();
         set {
-            $this->api->saucer_window_set_title($this->id->ptr, $this->title = $value);
+            $this->saucer->saucer_window_set_title($this->id->ptr, $this->title = $value);
         }
     }
 
     /**
      * Gets window state.
+     *
+     * @api
      */
     public private(set) WindowState $state = WindowState::Normal {
         get => $this->state;
@@ -95,6 +94,8 @@ final class Window implements
 
     /**
      * Provides window decorations configs.
+     *
+     * @api
      */
     public WindowDecoration $decoration {
         /**
@@ -151,6 +152,8 @@ final class Window implements
 
     /**
      * Contains current window size.
+     *
+     * @api
      */
     public MutableSizeInterface $size {
         /**
@@ -211,6 +214,8 @@ final class Window implements
 
     /**
      * Contains minimum size bounds of the window.
+     *
+     * @api
      */
     public MutableSizeInterface $min {
         /**
@@ -272,6 +277,8 @@ final class Window implements
 
     /**
      * Contains maximum size bounds of the window.
+     *
+     * @api
      */
     public MutableSizeInterface $max {
         /**
@@ -333,6 +340,8 @@ final class Window implements
 
     /**
      * Contains window visibility option.
+     *
+     * @api
      */
     public bool $isVisible {
         /**
@@ -346,7 +355,7 @@ final class Window implements
          * }
          * ```
          */
-        get => $this->api->saucer_window_visible($this->id->ptr);
+        get => $this->saucer->saucer_window_visible($this->id->ptr);
         /**
          * Show the window in case of property will be set to {@see true}
          * or hide in case of {@see false}.
@@ -361,15 +370,17 @@ final class Window implements
          */
         set {
             if ($value) {
-                $this->api->saucer_window_show($this->id->ptr);
+                $this->saucer->saucer_window_show($this->id->ptr);
             } else {
-                $this->api->saucer_window_hide($this->id->ptr);
+                $this->saucer->saucer_window_hide($this->id->ptr);
             }
         }
     }
 
     /**
      * Contains window "always on top" option.
+     *
+     * @api
      */
     public bool $isAlwaysOnTop {
         /**
@@ -383,7 +394,7 @@ final class Window implements
          * }
          * ```
          */
-        get => $this->api->saucer_window_always_on_top($this->id->ptr);
+        get => $this->saucer->saucer_window_always_on_top($this->id->ptr);
         /**
          * Sets window "always on top" feature in case of property was be set
          * to {@see true} or disable this feature in case of {@see false}.
@@ -397,12 +408,14 @@ final class Window implements
          * ```
          */
         set {
-            $this->api->saucer_window_set_always_on_top($this->id->ptr, $value);
+            $this->saucer->saucer_window_set_always_on_top($this->id->ptr, $value);
         }
     }
 
     /**
      * Contains window "click through" option.
+     *
+     * @api
      */
     public bool $isClickThrough {
         /**
@@ -416,7 +429,7 @@ final class Window implements
          * }
          * ```
          */
-        get => $this->api->saucer_window_click_through($this->id->ptr);
+        get => $this->saucer->saucer_window_click_through($this->id->ptr);
         /**
          * Sets window "click through" feature in case of property was be set
          * to {@see true} or disable this feature in case of {@see false}.
@@ -430,7 +443,7 @@ final class Window implements
          * ```
          */
         set {
-            $this->api->saucer_window_set_click_through($this->id->ptr, $value);
+            $this->saucer->saucer_window_set_click_through($this->id->ptr, $value);
         }
     }
 
@@ -444,14 +457,26 @@ final class Window implements
      *     echo 'Window is not closed';
      * }
      * ```
+     *
+     * @api
      */
     public private(set) bool $isClosed = false;
 
     /**
+     * Window aware event listener & dispatcher.
+     */
+    private readonly EventListener $listener;
+
+    /**
+     * List of window extensions.
+     *
+     * @var Registry<Window>
+     */
+    private readonly Registry $extensions;
+
+    /**
      * Contains an internal bridge between system {@see SaucerInterface} events
      * and the PSR {@see Window::$events} dispatcher.
-     *
-     * @phpstan-ignore property.onlyWritten
      */
     private readonly SaucerWindowEventHandler $handler;
 
@@ -470,7 +495,7 @@ final class Window implements
         /**
          * Contains shared WebView API library.
          */
-        private readonly SaucerInterface $api,
+        private readonly SaucerInterface $saucer,
         /**
          * Gets parent application instance to which this window belongs.
          */
@@ -482,18 +507,22 @@ final class Window implements
         EventDispatcherInterface $dispatcher,
     ) {
         // Initialization Window's fields and properties
-        $this->id = self::createWindowId($api, $app, $this->info);
+        $this->id = self::createWindowId($saucer, $app, $this->info);
         $this->listener = self::createEventListener($dispatcher);
-        $this->size = self::createWindowSize($api, $this->id);
-        $this->min = self::createWindowMinSize($api, $this->id);
-        $this->max = self::createWindowMaxSize($api, $this->id);
-        $this->webview = self::createWebView($api, $this, $info, $this->listener);
+        $this->size = self::createWindowSize($saucer, $this->id);
+        $this->min = self::createWindowMinSize($saucer, $this->id);
+        $this->max = self::createWindowMaxSize($saucer, $this->id);
+        $this->webview = self::createWebView($saucer, $this, $info, $this->listener);
         $this->decoration = self::createWindowDecorations($info);
-        $this->handler = self::createSaucerWindowEventHandler($api, $this, $this->listener);
+        $this->handler = self::createSaucerWindowEventHandler($saucer, $this, $this->listener);
 
         // Initialization of Window's API
         $this->extensions = new Registry($this, $this->listener, $info->extensions);
-        $this->extensions->boot();
+        foreach ($this->extensions->boot() as $property => $extension) {
+            // Direct access to dynamic property is 5+ times
+            // faster than magic `__get` call.
+            $this->__set($property, $extension);
+        }
 
         // Register Window's subsystems
         $this->registerDefaultEventListeners();
@@ -505,9 +534,9 @@ final class Window implements
     /**
      * @template TArgService of object
      *
-     * @param class-string<TArgService> $id
+     * @param class-string<TArgService>|string $id
      *
-     * @return TArgService
+     * @return ($id is class-string<TArgService> ? TArgService : object)
      * @throws ExtensionNotFoundException
      */
     public function get(string $id): object
@@ -515,9 +544,6 @@ final class Window implements
         return $this->extensions->get($id);
     }
 
-    /**
-     * @param class-string $id
-     */
     public function has(string $id): bool
     {
         return $this->extensions->has($id);
@@ -599,7 +625,7 @@ final class Window implements
         EventDispatcherInterface $dispatcher,
     ): WebView {
         return new WebView(
-            api: $api,
+            saucer: $api,
             window: $window,
             info: $info->webview,
             dispatcher: $dispatcher,
@@ -648,7 +674,7 @@ final class Window implements
      */
     private function getCurrentWindowTitle(): string
     {
-        $result = $this->api->saucer_window_title($this->id->ptr);
+        $result = $this->saucer->saucer_window_title($this->id->ptr);
 
         try {
             return \FFI::string($result);
@@ -768,15 +794,15 @@ final class Window implements
     {
         $ptr = $this->id->ptr;
 
-        $this->api->saucer_webview_background(
+        $this->saucer->saucer_webview_background(
             $ptr,
-            \FFI::addr($r = $this->api->new('uint8_t')),
-            \FFI::addr($g = $this->api->new('uint8_t')),
-            \FFI::addr($b = $this->api->new('uint8_t')),
-            \FFI::addr($a = $this->api->new('uint8_t')),
+            \FFI::addr($r = $this->saucer->new('uint8_t')),
+            \FFI::addr($g = $this->saucer->new('uint8_t')),
+            \FFI::addr($b = $this->saucer->new('uint8_t')),
+            \FFI::addr($a = $this->saucer->new('uint8_t')),
         );
 
-        $isDarkModeWasEnabled = $this->api->saucer_webview_force_dark_mode($ptr);
+        $isDarkModeWasEnabled = $this->saucer->saucer_webview_force_dark_mode($ptr);
 
         // Please note that the order of function calls is important,
         // as there is a bug in the kernel of saucer v6.0 that causes
@@ -795,14 +821,14 @@ final class Window implements
             case WindowDecoration::DarkMode:
                 if ($a->cdata !== 255) {
                     /** @phpstan-ignore-next-line : PHPStan does not support FFI correctly */
-                    $this->api->saucer_webview_set_background($ptr, $r->cdata, $g->cdata, $b->cdata, 255);
+                    $this->saucer->saucer_webview_set_background($ptr, $r->cdata, $g->cdata, $b->cdata, 255);
                 }
 
-                $this->api->saucer_window_set_decorations($ptr, true);
+                $this->saucer->saucer_window_set_decorations($ptr, true);
 
                 // Refresh in case of dark mode was disabled
                 if ($isDarkModeWasEnabled === false) {
-                    $this->api->saucer_webview_set_force_dark_mode($ptr, true);
+                    $this->saucer->saucer_webview_set_force_dark_mode($ptr, true);
                     $this->refresh();
                 }
                 break;
@@ -810,32 +836,32 @@ final class Window implements
             case WindowDecoration::Frameless:
                 if ($a->cdata !== 255) {
                     /** @phpstan-ignore-next-line : PHPStan does not support FFI correctly */
-                    $this->api->saucer_webview_set_background($ptr, $r->cdata, $g->cdata, $b->cdata, 255);
+                    $this->saucer->saucer_webview_set_background($ptr, $r->cdata, $g->cdata, $b->cdata, 255);
                 }
 
-                $this->api->saucer_window_set_decorations($ptr, false);
+                $this->saucer->saucer_window_set_decorations($ptr, false);
                 break;
 
             case WindowDecoration::Transparent:
-                $this->api->saucer_window_set_decorations($ptr, false);
+                $this->saucer->saucer_window_set_decorations($ptr, false);
 
                 if ($a->cdata !== 0) {
                     /** @phpstan-ignore-next-line : PHPStan does not support FFI correctly */
-                    $this->api->saucer_webview_set_background($ptr, $r->cdata, $g->cdata, $b->cdata, 0);
+                    $this->saucer->saucer_webview_set_background($ptr, $r->cdata, $g->cdata, $b->cdata, 0);
                 }
                 break;
 
             default:
                 if ($a->cdata !== 255) {
                     /** @phpstan-ignore-next-line : PHPStan does not support FFI correctly */
-                    $this->api->saucer_webview_set_background($ptr, $r->cdata, $g->cdata, $b->cdata, 255);
+                    $this->saucer->saucer_webview_set_background($ptr, $r->cdata, $g->cdata, $b->cdata, 255);
                 }
 
-                $this->api->saucer_window_set_decorations($ptr, true);
+                $this->saucer->saucer_window_set_decorations($ptr, true);
 
                 // Refresh in case of dark mode was enabled
                 if ($isDarkModeWasEnabled) {
-                    $this->api->saucer_webview_set_force_dark_mode($ptr, false);
+                    $this->saucer->saucer_webview_set_force_dark_mode($ptr, false);
                     $this->refresh();
                 }
         }
@@ -865,7 +891,7 @@ final class Window implements
      */
     public function startDrag(): void
     {
-        $this->api->saucer_window_start_drag($this->id->ptr);
+        $this->saucer->saucer_window_start_drag($this->id->ptr);
     }
 
     /**
@@ -875,7 +901,7 @@ final class Window implements
      */
     public function startResize(WindowEdge|WindowCorner $direction): void
     {
-        $this->api->saucer_window_start_resize($this->id->ptr, match ($direction) {
+        $this->saucer->saucer_window_start_resize($this->id->ptr, match ($direction) {
             WindowEdge::Top => SaucerWindowEdge::SAUCER_WINDOW_EDGE_TOP,
             WindowEdge::Right => SaucerWindowEdge::SAUCER_WINDOW_EDGE_RIGHT,
             WindowEdge::Bottom => SaucerWindowEdge::SAUCER_WINDOW_EDGE_BOTTOM,
@@ -898,7 +924,7 @@ final class Window implements
      */
     public function focus(): void
     {
-        $this->api->saucer_window_focus($this->id->ptr);
+        $this->saucer->saucer_window_focus($this->id->ptr);
     }
 
     /**
@@ -911,7 +937,7 @@ final class Window implements
      */
     public function show(): void
     {
-        $this->api->saucer_window_show($this->id->ptr);
+        $this->saucer->saucer_window_show($this->id->ptr);
     }
 
     /**
@@ -924,7 +950,7 @@ final class Window implements
      */
     public function hide(): void
     {
-        $this->api->saucer_window_hide($this->id->ptr);
+        $this->saucer->saucer_window_hide($this->id->ptr);
     }
 
     /**
@@ -936,7 +962,7 @@ final class Window implements
      */
     public function maximize(): void
     {
-        $this->api->saucer_window_set_maximized($this->id->ptr, true);
+        $this->saucer->saucer_window_set_maximized($this->id->ptr, true);
     }
 
     /**
@@ -946,7 +972,7 @@ final class Window implements
      */
     public function minimize(): void
     {
-        $this->api->saucer_window_set_minimized($this->id->ptr, true);
+        $this->saucer->saucer_window_set_minimized($this->id->ptr, true);
     }
 
     /**
@@ -956,8 +982,8 @@ final class Window implements
      */
     public function restore(): void
     {
-        $this->api->saucer_window_set_maximized($this->id->ptr, false);
-        $this->api->saucer_window_set_minimized($this->id->ptr, false);
+        $this->saucer->saucer_window_set_maximized($this->id->ptr, false);
+        $this->saucer->saucer_window_set_minimized($this->id->ptr, false);
     }
 
     /**
@@ -968,11 +994,33 @@ final class Window implements
     public function close(): void
     {
         $this->isClosed = true;
-        $this->api->saucer_window_close($this->id->ptr);
+        $this->saucer->saucer_window_close($this->id->ptr);
     }
 
     public function __destruct()
     {
         $this->isClosed = true;
+    }
+
+    public function __get(string $name): object
+    {
+        return $this->extensions->get($name);
+    }
+
+    public function __isset(string $name): bool
+    {
+        return $this->extensions->has($name);
+    }
+
+    public function __set(string $name, mixed $value): void
+    {
+        $context = \debug_backtrace(\DEBUG_BACKTRACE_IGNORE_ARGS, 2)[1]['class'] ?? null;
+
+        if ($context !== self::class) {
+            throw new \Error(\sprintf('Cannot create dynamic property %s::$%s', static::class, $name));
+        }
+
+        /** @phpstan-ignore property.dynamicName */
+        $this->$name = $value;
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\WebComponents\Internal;
 
+use Boson\WebView\Api\Data\DataExtensionInterface;
+use Boson\WebView\Api\Scripts\ScriptsExtensionInterface;
 use Boson\WebView\Api\WebComponents\Component\HasAttributesInterface;
 use Boson\WebView\Api\WebComponents\Component\HasEventListenersInterface;
 use Boson\WebView\Api\WebComponents\Component\HasLifecycleCallbacksInterface;
@@ -38,6 +40,8 @@ final class WebViewComponentInstances
     public function __construct(
         private readonly WebView $webview,
         private readonly WebComponentInstantiatorInterface $instantiator,
+        private readonly DataExtensionInterface $data,
+        private readonly ScriptsExtensionInterface $scripts,
     ) {}
 
     /**
@@ -51,8 +55,8 @@ final class WebViewComponentInstances
      */
     private function createContext(string $id, string $name, string $component): ReactiveContext
     {
-        $evaluator = new ComponentEvaluator($id, $this->webview->scripts);
-        $retriever = new ComponentDataRetriever($id, $this->webview->data);
+        $evaluator = new ComponentEvaluator($id, $this->scripts);
+        $retriever = new ComponentDataRetriever($id, $this->data);
 
         return new ReactiveContext(
             name: \strtolower($name),

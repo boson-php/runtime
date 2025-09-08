@@ -193,7 +193,7 @@ final class WindowManager implements
     private function createWindowInstance(WindowCreateInfo $info): Window
     {
         $window = new Window(
-            api: $this->api,
+            saucer: $this->api,
             app: $this->app,
             info: $info,
             dispatcher: $this->listener,

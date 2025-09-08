@@ -7,11 +7,27 @@ namespace Boson\Window;
 use Boson\Extension\ExtensionProviderInterface;
 use Boson\WebView\WebViewCreateInfo;
 
+//
+// Note:
+// 1) This "$_" assign hack removes these constants from IDE autocomplete.
+// 2) Only define-like constants allows object instances.
+//
+\define($_ = 'Boson\Window\DEFAULT_WINDOW_EXTENSIONS', [
+    // ...
+]);
+
 /**
  * Information (configuration) DTO for creating a new physical window.
  */
 final readonly class WindowCreateInfo
 {
+    /**
+     * @var list<ExtensionProviderInterface<Window>>
+     *
+     * @noinspection PhpUndefinedConstantInspection
+     */
+    public const array DEFAULT_WINDOW_EXTENSIONS = DEFAULT_WINDOW_EXTENSIONS;
+
     /**
      * Gets default window width.
      */
@@ -79,7 +95,7 @@ final readonly class WindowCreateInfo
          * transparency and so on...
          */
         public WindowDecoration $decoration = WindowDecoration::Default,
-        iterable $extensions = [],
+        iterable $extensions = self::DEFAULT_WINDOW_EXTENSIONS,
         /**
          * Information (configuration) about creating a new webview object
          * that will be attached to the window.

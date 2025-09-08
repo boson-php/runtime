@@ -6,16 +6,16 @@ namespace Boson\WebView\Api\Scripts;
 
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\ExtensionProvider;
 use Boson\WebView\WebView;
 
 /**
- * @template-implements ExtensionProviderInterface<WebView>
+ * @template-extends ExtensionProvider<WebView>
  */
-final class ScriptsExtensionProvider implements ExtensionProviderInterface
+#[AvailableAs(['scripts', ScriptsExtensionInterface::class])]
+final class ScriptsExtensionProvider extends ExtensionProvider
 {
-    public array $dependencies = [];
-
     public function load(IdentifiableInterface $ctx, EventListener $listener): ScriptsExtension
     {
         return new ScriptsExtension($ctx, $listener);

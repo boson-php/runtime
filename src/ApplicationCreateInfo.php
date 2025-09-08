@@ -10,11 +10,29 @@ use Boson\Api\OperatingSystem\OperatingSystemExtensionProvider;
 use Boson\Extension\ExtensionProviderInterface;
 use Boson\Window\WindowCreateInfo;
 
+//
+// Note:
+// 1) This "$_" assign hack removes these constants from IDE autocomplete.
+// 2) Only define-like constants allows object instances.
+//
+\define($_ = 'Boson\DEFAULT_APPLICATION_EXTENSIONS', [
+    new CentralProcessorExtensionProvider(),
+    new OperatingSystemExtensionProvider(),
+    new DialogExtensionProvider(),
+]);
+
 /**
  * Information (configuration) DTO for creating a new application.
  */
 final readonly class ApplicationCreateInfo
 {
+    /**
+     * @var list<ExtensionProviderInterface<Application>>
+     *
+     * @noinspection PhpUndefinedConstantInspection
+     */
+    public const array DEFAULT_APPLICATION_EXTENSIONS = DEFAULT_APPLICATION_EXTENSIONS;
+
     /**
      * Contains default application name.
      *
@@ -78,11 +96,7 @@ final readonly class ApplicationCreateInfo
          * Automatically starts the application if set to {@see true}.
          */
         public bool $autorun = true,
-        iterable $extensions = [
-            new CentralProcessorExtensionProvider(),
-            new OperatingSystemExtensionProvider(),
-            new DialogExtensionProvider(),
-        ],
+        iterable $extensions = self::DEFAULT_APPLICATION_EXTENSIONS,
         /**
          * Main (default) window configuration DTO.
          */

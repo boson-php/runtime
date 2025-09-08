@@ -161,7 +161,7 @@ final class NetworkExtension extends WebViewExtension implements
             if ($this->data->get('navigator.connection instanceof NetworkInformation') !== true) {
                 throw NetworkNotAvailableException::becauseNetworkNotAvailable();
             }
-        } catch (WebViewIsNotReadyException $e) {
+        } catch (WebViewIsNotReadyException) {
             throw NetworkNotReadyException::becauseNetworkNotReady();
         }
 

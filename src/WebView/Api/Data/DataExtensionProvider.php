@@ -6,7 +6,9 @@ namespace Boson\WebView\Api\Data;
 
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\Attribute\DependsOn;
+use Boson\Extension\ExtensionProvider;
 use Boson\WebView\Api\Bindings\BindingsExtension;
 use Boson\WebView\Api\Bindings\BindingsExtensionProvider;
 use Boson\WebView\Api\Scripts\ScriptsExtension;
@@ -14,15 +16,13 @@ use Boson\WebView\Api\Scripts\ScriptsExtensionProvider;
 use Boson\WebView\WebView;
 
 /**
- * @template-implements ExtensionProviderInterface<WebView>
+ * @template-extends ExtensionProvider<WebView>
  */
-final class DataExtensionProvider implements ExtensionProviderInterface
+#[AvailableAs(['data', DataExtensionInterface::class])]
+#[DependsOn(ScriptsExtensionProvider::class)]
+#[DependsOn(BindingsExtensionProvider::class)]
+final class DataExtensionProvider extends ExtensionProvider
 {
-    public array $dependencies = [
-        ScriptsExtensionProvider::class,
-        BindingsExtensionProvider::class,
-    ];
-
     public function __construct(
         private readonly DataExtensionCreateInfo $info = new DataExtensionCreateInfo(),
     ) {}

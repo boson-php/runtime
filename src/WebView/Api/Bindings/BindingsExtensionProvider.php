@@ -6,20 +6,20 @@ namespace Boson\WebView\Api\Bindings;
 
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\Attribute\DependsOn;
+use Boson\Extension\ExtensionProvider;
 use Boson\WebView\Api\Scripts\ScriptsExtension;
 use Boson\WebView\Api\Scripts\ScriptsExtensionProvider;
 use Boson\WebView\WebView;
 
 /**
- * @template-implements ExtensionProviderInterface<WebView>
+ * @template-extends ExtensionProvider<WebView>
  */
-final class BindingsExtensionProvider implements ExtensionProviderInterface
+#[AvailableAs(['bindings', BindingsExtensionInterface::class])]
+#[DependsOn(ScriptsExtensionProvider::class)]
+final class BindingsExtensionProvider extends ExtensionProvider
 {
-    public array $dependencies = [
-        ScriptsExtensionProvider::class,
-    ];
-
     public function __construct(
         private readonly BindingsExtensionCreateInfo $info = new BindingsExtensionCreateInfo(),
     ) {}

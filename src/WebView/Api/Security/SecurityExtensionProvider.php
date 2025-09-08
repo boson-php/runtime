@@ -6,17 +6,17 @@ namespace Boson\WebView\Api\Security;
 
 use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\ExtensionProvider;
 use Boson\WebView\Api\Data\DataExtension;
 use Boson\WebView\WebView;
 
 /**
- * @template-implements ExtensionProviderInterface<WebView>
+ * @template-extends ExtensionProvider<WebView>
  */
-final class SecurityExtensionProvider implements ExtensionProviderInterface
+#[AvailableAs(['security', SecurityExtensionInterface::class])]
+final class SecurityExtensionProvider extends ExtensionProvider
 {
-    public array $dependencies = [];
-
     public function load(IdentifiableInterface $ctx, EventListener $listener): SecurityExtension
     {
         return new SecurityExtension(
