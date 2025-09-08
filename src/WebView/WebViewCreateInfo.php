@@ -9,7 +9,6 @@ use Boson\Extension\ExtensionProviderInterface;
 use Boson\WebView\Api\Bindings\BindingsExtensionProvider;
 use Boson\WebView\Api\Data\DataExtensionProvider;
 use Boson\WebView\Api\LifecycleEvents\LifecycleEventsExtensionProvider;
-use Boson\WebView\Api\Network\NetworkExtensionProvider;
 use Boson\WebView\Api\Schemes\SchemesExtensionProvider;
 use Boson\WebView\Api\Scripts\ScriptsExtensionProvider;
 use Boson\WebView\Api\Security\SecurityExtensionProvider;
@@ -27,7 +26,6 @@ use Boson\WebView\WebViewCreateInfo\StorageDirectoryResolver;
     new DataExtensionProvider(),
     new SecurityExtensionProvider(),
     new WebComponentsExtensionProvider(),
-    new NetworkExtensionProvider(),
     new SchemesExtensionProvider(),
     new LifecycleEventsExtensionProvider(),
 ]);

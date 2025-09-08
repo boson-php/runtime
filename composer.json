@@ -30,7 +30,7 @@
         "boson-php/uri-factory": "^0.18",
         "boson-php/uri-factory-contracts": "^0.18",
         "boson-php/weak-types": "^0.18",
-        "psr/container": "^1.0|^2.0",
+        "psr/container": "^2.0",
         "psr/event-dispatcher": "^1.0",
         "react/promise": "^3.0"
     },

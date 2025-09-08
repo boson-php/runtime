@@ -66,11 +66,6 @@ namespace Boson\WebView {
         public readonly DataExtensionInterface $data;
 
         /**
-         * Gets access to the Network API of the webview.
-         */
-        public readonly NetworkExtensionInterface $network;
-
-        /**
          * Gets access to the Schemes API of the webview.
          */
         public readonly SchemesExtensionInterface $schemes;
