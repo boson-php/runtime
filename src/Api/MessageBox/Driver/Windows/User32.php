@@ -10,7 +10,7 @@ use FFI\Env\Runtime;
  * @mixin \FFI
  *
  * @internal this is an internal library class, please do not use it in your code
- * @psalm-internal Boson\Api\MessageBox\Driver\Windows
+ * @psalm-internal Boson\Api\MessageBox\Driver
  */
 final readonly class User32
 {

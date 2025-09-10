@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Api\MessageBox;
 
+use Boson\Api\MessageBox\Driver\MacOSMessageBoxExtension;
 use Boson\Api\MessageBox\Driver\VoidMessageBoxExtension;
 use Boson\Api\MessageBox\Driver\WindowsMessageBoxExtension;
 use Boson\Api\OperatingSystem\OperatingSystemExtensionInterface;
@@ -28,6 +29,7 @@ final class MessageBoxExtensionProvider extends ExtensionProvider
         $os = $ctx->get(OperatingSystemExtensionInterface::class);
 
         return match (true) {
+            $os->family->is(Family::Darwin) => new MacOSMessageBoxExtension(),
             $os->family->is(Family::Windows) => new WindowsMessageBoxExtension(),
             default => new VoidMessageBoxExtension(),
         };
