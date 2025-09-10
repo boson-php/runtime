@@ -10,9 +10,6 @@ use Boson\Api\MessageBox\MessageBoxCreateInfo;
 use Boson\Api\MessageBox\MessageBoxExtensionInterface;
 use Boson\Api\MessageBox\MessageBoxIcon;
 use FFI\CData;
-use React\Promise\PromiseInterface;
-
-use function React\Promise\resolve;
 
 final readonly class WindowsMessageBoxExtension implements MessageBoxExtensionInterface
 {
@@ -37,7 +34,7 @@ final readonly class WindowsMessageBoxExtension implements MessageBoxExtensionIn
         return $result;
     }
 
-    public function create(MessageBoxCreateInfo $info): PromiseInterface
+    public function create(MessageBoxCreateInfo $info): ?MessageBoxButton
     {
         $title = $this->string($info->title);
         $text = $this->string($info->text);
@@ -59,9 +56,9 @@ final readonly class WindowsMessageBoxExtension implements MessageBoxExtensionIn
         \FFI::free($text);
 
         return match ($result) {
-            User32::IDOK => resolve(MessageBoxButton::Ok),
-            User32::IDCANCEL => resolve(MessageBoxButton::Cancel),
-            default => resolve(null),
+            User32::IDOK => MessageBoxButton::Ok,
+            User32::IDCANCEL => MessageBoxButton::Cancel,
+            default => null,
         };
     }
 }

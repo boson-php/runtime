@@ -27,14 +27,17 @@ final readonly class LibObjectC
     }
 
     /**
+     * @param non-empty-string $return
      * @param non-empty-string ...$types
      * @return callable(CData,CData,...):mixed
      */
-    public function getMessageSend(string ...$types): callable
+    public function getMessageSend(string $return, string ...$types): callable
     {
-        $signature = \sprintf('id(*)(id, SEL, %s)', \implode(',', $types));
+        $suffix = $types === [] ? '...' : \implode(',', $types);
 
-        return $this->cast($signature, $this->ffi->objc_msgSend);
+        $signature = \sprintf('%s(*)(id, SEL, %s)', $return, $suffix);
+
+        return $this->ffi->cast($signature, $this->ffi->objc_msgSend);
     }
 
     /**
