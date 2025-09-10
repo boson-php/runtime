@@ -11,6 +11,6 @@ class ExtensionLoadingException extends ExtensionException implements
 {
     public static function becauseLoadingExceptionOccurs(\Throwable $e): self
     {
-        return new self('An error occurred while loading an extension', previous: $e);
+        return new self('An internal error occurred while loading an extension', previous: $e);
     }
 }

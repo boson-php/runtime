@@ -18,14 +18,7 @@ use Boson\Event\ApplicationStopping;
 use Boson\Exception\NoDefaultWindowException;
 use Boson\Extension\Exception\ExtensionNotFoundException;
 use Boson\Extension\Registry;
-use Boson\Internal\BootHandler\BootHandlerInterface;
-use Boson\Internal\BootHandler\WindowsDetachConsoleBootHandler;
-use Boson\Internal\DeferRunner\DeferRunnerInterface;
-use Boson\Internal\DeferRunner\NativeShutdownFunctionRunner;
 use Boson\Internal\Poller\SaucerPoller;
-use Boson\Internal\QuitHandler\PcntlQuitHandler;
-use Boson\Internal\QuitHandler\QuitHandlerInterface;
-use Boson\Internal\QuitHandler\WindowsQuitHandler;
 use Boson\Internal\ThreadsCountResolver;
 use Boson\Poller\PollerInterface;
 use Boson\Shared\Marker\BlockingOperation;
@@ -160,13 +153,6 @@ class Application implements
     public readonly PollerInterface $poller;
 
     /**
-     * Indicates whether the application was ever running.
-     *
-     * @api
-     */
-    private bool $wasEverRunning = false;
-
-    /**
      * List of application extensions.
      *
      * @var Registry<Application>
@@ -190,24 +176,23 @@ class Application implements
         public readonly ApplicationCreateInfo $info = new ApplicationCreateInfo(),
         ?EventDispatcherInterface $dispatcher = null,
         /**
-         * @var list<BootHandlerInterface>
+         * @var array<array-key, mixed>
+         *
+         * @deprecated doesn't affect anything anymore and will be removed in future versions
          */
-        private readonly array $bootHandlers = [
-            new WindowsDetachConsoleBootHandler(),
-        ],
+        private readonly array $bootHandlers = [],
         /**
-         * @var list<QuitHandlerInterface>
+         * @var array<array-key, mixed>
+         *
+         * @deprecated doesn't affect anything anymore and will be removed in future versions
          */
-        private readonly array $quitHandlers = [
-            new WindowsQuitHandler(),
-            new PcntlQuitHandler(),
-        ],
+        private readonly array $quitHandlers = [],
         /**
-         * @var list<DeferRunnerInterface>
+         * @var array<array-key, mixed>
+         *
+         * @deprecated doesn't affect anything anymore and will be removed in future versions
          */
-        private readonly array $deferRunners = [
-            new NativeShutdownFunctionRunner(),
-        ],
+        private readonly array $deferRunners = [],
     ) {
         // Initialization Application's fields and properties
         $this->isDebug = $this->createIsDebugParameter($info->debug);
@@ -230,11 +215,6 @@ class Application implements
         // Register Application's subsystems
         $this->registerSchemes();
         $this->registerDefaultEventListeners();
-        $this->registerQuitHandlers();
-        $this->registerDeferRunner();
-
-        // Boot the Application
-        $this->boot();
     }
 
     /**
@@ -306,16 +286,6 @@ class Application implements
         }
 
         return $debug;
-    }
-
-    /**
-     * Boot the application.
-     */
-    private function boot(): void
-    {
-        foreach ($this->bootHandlers as $handler) {
-            $handler->boot();
-        }
     }
 
     /**
@@ -451,61 +421,6 @@ class Application implements
     }
 
     /**
-     * Registers quit handlers if they haven't been registered yet.
-     *
-     * This ensures that the application can be properly terminated.
-     */
-    private function registerQuitHandlers(): void
-    {
-        foreach ($this->quitHandlers as $handler) {
-            if ($handler->isSupported === false) {
-                continue;
-            }
-
-            // Register EVERY quit handler
-            $handler->register($this->quit(...));
-        }
-    }
-
-    /**
-     * Registers a defer runner if none has been registered yet.
-     *
-     * This allows the application to be started automatically
-     * after script execution.
-     */
-    private function registerDeferRunner(): void
-    {
-        if ($this->info->autorun === false) {
-            return;
-        }
-
-        foreach ($this->deferRunners as $runner) {
-            if ($runner->isSupported === false) {
-                continue;
-            }
-
-            // Register FIRST supported deferred runner
-            $runner->register($this->runIfNotEverRunning(...));
-            break;
-        }
-    }
-
-    /**
-     * Runs the application if it has never been run before.
-     *
-     * This is used by the defer runner to start
-     * the application automatically.
-     */
-    private function runIfNotEverRunning(): void
-    {
-        if ($this->wasEverRunning) {
-            return;
-        }
-
-        $this->run();
-    }
-
-    /**
      * Dispatches an intention to launch an application and returns a {@see bool}
      * result: whether to start the application or not.
      */
@@ -539,7 +454,6 @@ class Application implements
         }
 
         $this->isRunning = true;
-        $this->wasEverRunning = true;
 
         $this->listener->dispatch(new ApplicationStarted($this));
 
@@ -572,7 +486,6 @@ class Application implements
             return;
         }
 
-        $this->wasEverRunning = true;
         $this->isRunning = false;
         $this->saucer->saucer_application_quit($this->id->ptr);
 

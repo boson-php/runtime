@@ -18,19 +18,21 @@ use Psr\Container\ContainerInterface;
 final class Registry implements ContainerInterface
 {
     /**
+     * @var list<object>
+     *
+     * @phpstan-ignore-next-line : Just keep extensions list in memory
+     */
+    private array $privateExtensions = [];
+
+    /**
      * @var array<non-empty-string, object>
      */
-    private array $extensions = [];
+    private array $publicExtensions = [];
 
     /**
      * @var list<ExtensionProviderInterface<TContext>>
      */
     private array $providers = [];
-
-    /**
-     * @var array<non-empty-string, object>
-     */
-    private array $properties = [];
 
     private bool $booted = false;
 
@@ -55,7 +57,7 @@ final class Registry implements ContainerInterface
     public function boot(): array
     {
         if ($this->booted === true) {
-            return $this->properties;
+            return $this->publicExtensions;
         }
 
         foreach (new DependencyGraph($this->providers) as $provider) {
@@ -65,36 +67,30 @@ final class Registry implements ContainerInterface
                 throw ExtensionLoadingException::becauseLoadingExceptionOccurs($e);
             }
 
-            $this->extensions[$extension::class] = $extension;
+            // Skip in case of extension will not load
+            if ($extension === null) {
+                continue;
+            }
 
+            // Load as public extension
             foreach ($provider->aliases as $alias) {
-                if (isset($this->extensions[$alias]) && $alias !== $extension::class) {
+                if (isset($this->publicExtensions[$alias])) {
                     throw ExtensionAlreadyLoadedException::becauseExtensionAlreadyLoaded($alias);
                 }
 
-                if ($this->isProperty($alias)) {
-                    $this->properties[$alias] = $extension;
-                }
+                $this->publicExtensions[$alias] = $extension;
+            }
 
-                $this->extensions[$alias] = $extension;
+            // Otherwise load as private extension
+            if ($provider->aliases === []) {
+                $this->privateExtensions[] = $extension;
             }
         }
 
         $this->providers = [];
         $this->booted = true;
 
-        return $this->properties;
-    }
-
-    private function isProperty(string $name): bool
-    {
-        if ($name === '') {
-            return false;
-        }
-
-        \preg_match('/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$/isu', $name, $matches);
-
-        return isset($matches[0]);
+        return $this->publicExtensions;
     }
 
     /**
@@ -107,12 +103,12 @@ final class Registry implements ContainerInterface
      */
     public function get(string $id): object
     {
-        return $this->extensions[$id]
+        return $this->publicExtensions[$id]
             ?? throw ExtensionNotFoundException::becauseExtensionNotFound($id);
     }
 
     public function has(string $id): bool
     {
-        return isset($this->extensions[$id]);
+        return isset($this->publicExtensions[$id]);
     }
 }

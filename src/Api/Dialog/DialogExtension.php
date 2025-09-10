@@ -9,7 +9,7 @@ use FFI\CData;
 
 /**
  * @internal this is an internal library class, please do not use it in your code
- * @psalm-internal Boson
+ * @psalm-internal Boson\Api\Dialog
  */
 final class DialogExtension extends ApplicationExtension implements DialogExtensionInterface
 {

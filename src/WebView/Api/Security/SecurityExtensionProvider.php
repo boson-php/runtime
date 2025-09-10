@@ -8,7 +8,7 @@ use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
 use Boson\Extension\Attribute\AvailableAs;
 use Boson\Extension\ExtensionProvider;
-use Boson\WebView\Api\Data\DataExtension;
+use Boson\WebView\Api\Data\DataExtensionInterface;
 use Boson\WebView\WebView;
 
 /**
@@ -22,7 +22,7 @@ final class SecurityExtensionProvider extends ExtensionProvider
         return new SecurityExtension(
             webview: $ctx,
             listener: $listener,
-            data: $ctx->get(DataExtension::class),
+            data: $ctx->get(DataExtensionInterface::class),
         );
     }
 }

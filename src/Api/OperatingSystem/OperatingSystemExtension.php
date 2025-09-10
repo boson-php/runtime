@@ -12,7 +12,7 @@ use Boson\Contracts\OsInfo\StandardInterface;
 
 /**
  * @internal this is an internal library class, please do not use it in your code
- * @psalm-internal Boson
+ * @psalm-internal Boson\Api\OperatingSystem
  */
 final class OperatingSystemExtension extends ApplicationExtension implements
     OperatingSystemExtensionInterface

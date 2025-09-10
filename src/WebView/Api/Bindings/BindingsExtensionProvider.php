@@ -9,7 +9,7 @@ use Boson\Dispatcher\EventListener;
 use Boson\Extension\Attribute\AvailableAs;
 use Boson\Extension\Attribute\DependsOn;
 use Boson\Extension\ExtensionProvider;
-use Boson\WebView\Api\Scripts\ScriptsExtension;
+use Boson\WebView\Api\Scripts\ScriptsExtensionInterface;
 use Boson\WebView\Api\Scripts\ScriptsExtensionProvider;
 use Boson\WebView\WebView;
 
@@ -30,7 +30,7 @@ final class BindingsExtensionProvider extends ExtensionProvider
             context: $ctx,
             listener: $listener,
             info: $this->info,
-            scripts: $ctx->get(ScriptsExtension::class),
+            scripts: $ctx->get(ScriptsExtensionInterface::class),
         );
     }
 }

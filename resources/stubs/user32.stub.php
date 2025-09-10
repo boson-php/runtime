@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Boson\Api\DetachConsole\Driver\Windows;
+namespace Boson\Api\MessageBox\Driver\Windows;
 
 use FFI\CData;
 use FFI\CType;
@@ -12,7 +12,7 @@ use FFI\CType;
  * @seal-properties
  * @seal-methods
  */
-final readonly class Kernel32
+final readonly class User32
 {
     /**
      * @param CType|non-empty-string $type
@@ -24,5 +24,5 @@ final readonly class Kernel32
      */
     public function cast(CType|string $type, CData|int|float|bool|null $ptr): CData {}
 
-    public function FreeConsole(): bool {}
+    public function MessageBoxW(?CData $hWnd, CData $lpText, CData $lpCaption, int $uType): int {}
 }

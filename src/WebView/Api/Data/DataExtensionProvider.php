@@ -9,9 +9,9 @@ use Boson\Dispatcher\EventListener;
 use Boson\Extension\Attribute\AvailableAs;
 use Boson\Extension\Attribute\DependsOn;
 use Boson\Extension\ExtensionProvider;
-use Boson\WebView\Api\Bindings\BindingsExtension;
+use Boson\WebView\Api\Bindings\BindingsExtensionInterface;
 use Boson\WebView\Api\Bindings\BindingsExtensionProvider;
-use Boson\WebView\Api\Scripts\ScriptsExtension;
+use Boson\WebView\Api\Scripts\ScriptsExtensionInterface;
 use Boson\WebView\Api\Scripts\ScriptsExtensionProvider;
 use Boson\WebView\WebView;
 
@@ -33,8 +33,8 @@ final class DataExtensionProvider extends ExtensionProvider
             context: $ctx,
             listener: $listener,
             info: $this->info,
-            scripts: $ctx->get(ScriptsExtension::class),
-            bindings: $ctx->get(BindingsExtension::class),
+            scripts: $ctx->get(ScriptsExtensionInterface::class),
+            bindings: $ctx->get(BindingsExtensionInterface::class),
         );
     }
 }

@@ -73,7 +73,10 @@ interface ExtensionProviderInterface
     /**
      * Loads the extension for the requested context.
      *
+     * May return {@see null} in case the extension should not
+     * load for some reason.
+     *
      * @param TContext $ctx
      */
-    public function load(IdentifiableInterface $ctx, EventListener $listener): object;
+    public function load(IdentifiableInterface $ctx, EventListener $listener): ?object;
 }
