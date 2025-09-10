@@ -501,7 +501,6 @@ class Application implements
     public function __destruct()
     {
         $this->saucer->saucer_application_quit($this->id->ptr);
-        $this->saucer->saucer_application_free($this->id->ptr);
     }
 
     public function __get(string $name): object
