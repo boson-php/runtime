@@ -51,18 +51,18 @@ final readonly class MacOSMessageBoxExtension implements MessageBoxExtensionInte
             $this->libobjc->sel_registerName('new'),
         );
 
-        // [alert setMessageText:textStr];
+        // [alert setMessageText:titleStr];
         ($this->msgSendId)(
             $alert,
             $this->libobjc->sel_registerName('setMessageText:'),
-            $textStr,
+            $titleStr,
         );
 
-        // [alert setInformativeText:titleStr];
+        // [alert setInformativeText:textStr];
         ($this->msgSendId)(
             $alert,
             $this->libobjc->sel_registerName('setInformativeText:'),
-            $titleStr,
+            $textStr,
         );
 
         // Set alert style based on icon
