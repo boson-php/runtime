@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Api\Autorun;
 
+use Boson\Api\Autorun\Event\ExpectsAutorun;
 use Boson\Application;
 use Boson\ApplicationCreateInfo;
 use Boson\Contracts\EventListener\Subscription\CancellableSubscriptionInterface;
@@ -44,8 +45,8 @@ final class AutorunExtensionProvider extends ExtensionProvider
 
         $this->listenStartup($ctx, $listener);
 
-        $callback = function () use ($ctx): void {
-            $this->onApplicationShouldStart($ctx);
+        $callback = function () use ($ctx, $listener): void {
+            $this->onApplicationShouldStart($ctx, $listener);
         };
 
         foreach ($this->info->handlers as $handler) {
@@ -85,13 +86,19 @@ final class AutorunExtensionProvider extends ExtensionProvider
      * A callback that is called when the application WANTS to start (using
      * autorun features).
      */
-    private function onApplicationShouldStart(Application $app): void
+    private function onApplicationShouldStart(Application $app, EventListener $listener): void
     {
         if (!$this->shouldStart($app)) {
             return;
         }
 
         $this->shouldNotRunAnymore($app);
+
+        $listener->dispatch($intention = new ExpectsAutorun($app));
+
+        if ($intention->isCancelled) {
+            return;
+        }
 
         $app->run();
     }

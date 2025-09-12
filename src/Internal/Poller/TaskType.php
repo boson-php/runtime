@@ -7,15 +7,15 @@ namespace Boson\Internal\Poller;
 enum TaskType
 {
     case Internal;
-    case Periodic;
     case Queued;
+    case Periodic;
 
     public function next(): self
     {
         return match ($this) {
-            self::Internal => self::Periodic,
-            self::Periodic => self::Queued,
-            self::Queued => self::Internal,
+            self::Internal => self::Queued,
+            self::Queued => self::Periodic,
+            self::Periodic => self::Internal,
         };
     }
 }

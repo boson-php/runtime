@@ -67,12 +67,12 @@ final class SaucerPoller implements PollerInterface
                 $this->executeInternalTask();
                 break;
 
-            case TaskType::Periodic:
-                $this->executePeriodicTask();
-                break;
-
             case TaskType::Queued:
                 $this->executeQueuedTask();
+                break;
+
+            case TaskType::Periodic:
+                $this->executePeriodicTask();
                 break;
         }
 

@@ -14,7 +14,7 @@ interface FileOpenerInterface
      * - A `/path/to/text.txt` file, the system editor opens.
      * - A `http://example.com` file, the system browser opens.
      *
-     * @param non-empty-string $url
+     * @param non-empty-string|\Stringable $uri
      */
-    public function open(string $url): void;
+    public function open(string|\Stringable $uri): void;
 }

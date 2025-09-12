@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Api\MessageBox\Driver\MacOS;
 
+use FFI\CData;
 use FFI\Env\Runtime;
 
 /**
@@ -29,7 +30,8 @@ final readonly class LibObjectC
     /**
      * @param non-empty-string $return
      * @param non-empty-string ...$types
-     * @return callable(CData,CData,...):mixed
+     *
+     * @return callable(CData, CData, mixed...):mixed
      */
     public function getMessageSend(string $return, string ...$types): callable
     {

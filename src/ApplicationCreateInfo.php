@@ -6,7 +6,7 @@ namespace Boson;
 
 use Boson\Api\Autorun\AutorunExtensionProvider;
 use Boson\Api\CentralProcessor\CentralProcessorExtensionProvider;
-use Boson\Api\DetachConsole\DetachConsoleExtensionProvider;
+use Boson\Api\Console\ConsoleExtensionProvider;
 use Boson\Api\Dialog\DialogExtensionProvider;
 use Boson\Api\MessageBox\MessageBoxExtensionProvider;
 use Boson\Api\OperatingSystem\OperatingSystemExtensionProvider;
@@ -25,7 +25,7 @@ use Boson\Window\WindowCreateInfo;
     new OperatingSystemExtensionProvider(),
     new DialogExtensionProvider(),
     new QuitOnCloseExtensionProvider(),
-    new DetachConsoleExtensionProvider(),
+    new ConsoleExtensionProvider(),
     new QuitHandlerExtensionProvider(),
     new AutorunExtensionProvider(),
     new MessageBoxExtensionProvider(),

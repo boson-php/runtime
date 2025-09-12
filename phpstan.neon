@@ -1,0 +1,22 @@
+parameters:
+  level: max
+  scanFiles:
+    - resources/stubs/aliases.stub.php
+    - resources/stubs/saucer-webview-events.stub.php
+    - resources/stubs/saucer-window-events.stub.php
+    - resources/stubs/kernel32.stub.php
+    - resources/stubs/user32.stub.php
+  excludePaths:
+    - src/Api/Console/Driver/Windows/Kernel32.php
+    - src/Api/MessageBox/Driver/Windows/User32.php
+  strictRules:
+    allRules: true
+  fileExtensions:
+    - php
+  paths:
+    - src
+  tmpDir: vendor/.cache.phpstan
+  ignoreErrors:
+    # PHPStan does not support FFI
+    - '#^Access to an undefined property FFI\\CData#'
+    - '#does not accept FFI\\CData#'

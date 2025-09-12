@@ -5,6 +5,14 @@ declare(strict_types=1);
 namespace Boson\Api\Dialog;
 
 use Boson\Api\ApplicationExtension;
+use Boson\Api\Dialog\Event\DirectoriesSelecting;
+use Boson\Api\Dialog\Event\DirectorySelected;
+use Boson\Api\Dialog\Event\DirectorySelecting;
+use Boson\Api\Dialog\Event\FileSelected;
+use Boson\Api\Dialog\Event\FileSelecting;
+use Boson\Api\Dialog\Event\FilesSelecting;
+use Boson\Api\Dialog\Event\UriOpened;
+use Boson\Api\Dialog\Event\UriOpening;
 use FFI\CData;
 
 /**
@@ -50,9 +58,9 @@ final class DialogExtension extends ApplicationExtension implements DialogExtens
     }
 
     /**
-     * @param iterable<mixed, mixed> $filter
+     * @param list<non-empty-string> $filter
      */
-    private function createOptions(?string $directory, iterable $filter): CData
+    private function createOptions(?string $directory, array $filter): CData
     {
         $options = $this->app->saucer->saucer_picker_options_new();
 
@@ -63,12 +71,12 @@ final class DialogExtension extends ApplicationExtension implements DialogExtens
     }
 
     /**
-     * @param iterable<mixed, mixed> $filter
+     * @param list<non-empty-string> $filter
      * @param \Closure(CData, CData): ?CData $selector
      *
      * @return non-empty-string|null
      */
-    private function selectOne(?string $directory, iterable $filter, \Closure $selector): ?string
+    private function selectOne(?string $directory, array $filter, \Closure $selector): ?string
     {
         $options = $this->createOptions($directory, $filter);
 
@@ -88,12 +96,12 @@ final class DialogExtension extends ApplicationExtension implements DialogExtens
     }
 
     /**
-     * @param iterable<mixed, mixed> $filter
+     * @param list<non-empty-string> $filter
      * @param \Closure(CData, CData): ?CData $selector
      *
      * @return list<non-empty-string>
      */
-    private function selectMany(?string $directory, iterable $filter, \Closure $selector): array
+    private function selectMany(?string $directory, array $filter, \Closure $selector): array
     {
         $options = $this->createOptions($directory, $filter);
 
@@ -121,19 +129,53 @@ final class DialogExtension extends ApplicationExtension implements DialogExtens
         }
     }
 
-    public function open(string $url): void
+    public function open(string|\Stringable $uri): void
     {
-        $this->app->saucer->saucer_desktop_open($this->ptr, $url);
+        if (!$this->intent(new UriOpening($this->app, $uri))) {
+            return;
+        }
+
+        if (($uri = (string) $uri) === '') {
+            throw new \InvalidArgumentException('URI cannot be empty');
+        }
+
+        $this->app->saucer->saucer_desktop_open($this->ptr, $uri);
+
+        $this->dispatch(new UriOpened($this->app, $uri));
     }
 
     public function selectDirectory(?string $directory = null, iterable $filter = []): ?string
     {
-        return $this->selectOne($directory, $filter, $this->app->saucer->saucer_desktop_pick_folder(...));
+        if (!$this->intent(new DirectorySelecting($this->app, $directory, $filter))) {
+            return null;
+        }
+
+        $filter = \iterator_to_array($filter, false);
+
+        $result = $this->selectOne($directory, $filter, $this->app->saucer->saucer_desktop_pick_folder(...));
+
+        if ($result !== null) {
+            $this->dispatch(new DirectorySelected($this->app, $result, $directory, $filter));
+        }
+
+        return $result;
     }
 
     public function selectFile(?string $directory = null, iterable $filter = []): ?string
     {
-        return $this->selectOne($directory, $filter, $this->app->saucer->saucer_desktop_pick_file(...));
+        if (!$this->intent(new FileSelecting($this->app, $directory, $filter))) {
+            return null;
+        }
+
+        $filter = \iterator_to_array($filter, false);
+
+        $result = $this->selectOne($directory, $filter, $this->app->saucer->saucer_desktop_pick_file(...));
+
+        if ($result !== null) {
+            $this->dispatch(new FileSelected($this->app, $result, $directory, $filter));
+        }
+
+        return $result;
     }
 
     /**
@@ -141,7 +183,19 @@ final class DialogExtension extends ApplicationExtension implements DialogExtens
      */
     public function selectFiles(?string $directory = null, iterable $filter = []): array
     {
-        return $this->selectMany($directory, $filter, $this->app->saucer->saucer_desktop_pick_files(...));
+        if (!$this->intent(new FilesSelecting($this->app, $directory, $filter))) {
+            return [];
+        }
+
+        $filter = \iterator_to_array($filter, false);
+
+        $result = $this->selectMany($directory, $filter, $this->app->saucer->saucer_desktop_pick_files(...));
+
+        foreach ($result as $selection) {
+            $this->dispatch(new FileSelected($this->app, $selection, $directory, $filter));
+        }
+
+        return $result;
     }
 
     /**
@@ -149,7 +203,19 @@ final class DialogExtension extends ApplicationExtension implements DialogExtens
      */
     public function selectDirectories(?string $directory = null, iterable $filter = []): array
     {
-        return $this->selectMany($directory, $filter, $this->app->saucer->saucer_desktop_pick_folders(...));
+        if (!$this->intent(new DirectoriesSelecting($this->app, $directory, $filter))) {
+            return [];
+        }
+
+        $filter = \iterator_to_array($filter, false);
+
+        $result = $this->selectMany($directory, $filter, $this->app->saucer->saucer_desktop_pick_folders(...));
+
+        foreach ($result as $selection) {
+            $this->dispatch(new DirectorySelected($this->app, $selection, $directory, $filter));
+        }
+
+        return $result;
     }
 
     public function __destruct()

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Boson\Api\DetachConsole\Driver\Windows;
+namespace Boson\Api\Console\Driver\Windows;
 
 use FFI\Env\Runtime;
 
@@ -10,7 +10,7 @@ use FFI\Env\Runtime;
  * @mixin \FFI
  *
  * @internal this is an internal library class, please do not use it in your code
- * @psalm-internal Boson\Api\DetachConsole\Driver
+ * @psalm-internal Boson\Api\Console\Driver
  */
 final readonly class Kernel32
 {

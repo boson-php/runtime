@@ -240,7 +240,15 @@ class Application implements
      */
     protected function createApplicationPoller(SaucerInterface $saucer): PollerInterface
     {
-        return new SaucerPoller($this->id, $saucer);
+        $poller = new SaucerPoller($this->id, $saucer);
+
+        $poller->defer(function (): void {
+            $this->isRunning = true;
+
+            $this->listener->dispatch(new ApplicationStarted($this));
+        });
+
+        return $poller;
     }
 
     /**
@@ -453,11 +461,7 @@ class Application implements
             return;
         }
 
-        $this->isRunning = true;
-
-        $this->listener->dispatch(new ApplicationStarted($this));
-
-        /** @phpstan-ignore while.alwaysTrue */
+        /** @phpstan-ignore while.alwaysFalse */
         while ($this->isRunning) {
             $this->poller->next();
         }
