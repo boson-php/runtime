@@ -461,10 +461,10 @@ class Application implements
             return;
         }
 
-        /** @phpstan-ignore while.alwaysFalse */
-        while ($this->isRunning) {
+        do {
             $this->poller->next();
-        }
+            /** @phpstan-ignore doWhile.alwaysFalse */
+        } while ($this->isRunning);
     }
 
     /**

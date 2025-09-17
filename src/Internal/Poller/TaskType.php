@@ -10,6 +10,8 @@ enum TaskType
     case Queued;
     case Periodic;
 
+    public const self DEFAULT = self::Queued;
+
     public function next(): self
     {
         return match ($this) {

@@ -112,7 +112,7 @@ final readonly class MacOSMessageBoxExtension implements MessageBoxExtensionInte
         return match ($result) {
             1000 => $info->cancel ? MessageBoxButton::Cancel : MessageBoxButton::Ok,
             1001 => MessageBoxButton::Ok,
-            default => $info->cancel,
+            default => null,
         };
     }
 }

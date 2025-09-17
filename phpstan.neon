@@ -2,13 +2,12 @@ parameters:
   level: max
   scanFiles:
     - resources/stubs/aliases.stub.php
-    - resources/stubs/saucer-webview-events.stub.php
-    - resources/stubs/saucer-window-events.stub.php
-    - resources/stubs/kernel32.stub.php
-    - resources/stubs/user32.stub.php
+    - resources/stubs/saucer.stub.php
+    - resources/stubs/ffi.stub.php
   excludePaths:
     - src/Api/Console/Driver/Windows/Kernel32.php
     - src/Api/MessageBox/Driver/Windows/User32.php
+    - src/Api/MessageBox/Driver/MacOS/LibObjectC.php
   strictRules:
     allRules: true
   fileExtensions:

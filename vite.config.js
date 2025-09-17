@@ -7,6 +7,9 @@ module.exports = defineConfig({
         assetsDir: '',
         rollupOptions: {
             input: path.resolve(__dirname, 'resources/src/main.ts'),
+            output: {
+                entryFileNames: `main.js.php`,
+            },
         }
     }
 })

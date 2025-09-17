@@ -88,11 +88,6 @@ namespace Boson\WebView {
          */
         public readonly SecurityExtensionInterface $security;
 
-        /**
-         * Gets access to the Web Components API of the webview.
-         */
-        public readonly WebComponentsExtensionInterface $components;
-
     }
 
 }

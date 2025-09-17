@@ -12,7 +12,6 @@ use Boson\Contracts\Uri\UriInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
-use Boson\Exception\BosonException;
 use Boson\Extension\Exception\ExtensionNotFoundException;
 use Boson\Extension\Registry;
 use Boson\Shared\Marker\BlockingOperation;
@@ -42,11 +41,6 @@ final class WebView implements
     ContainerInterface
 {
     use EventListenerProvider;
-
-    /**
-     * @var non-empty-string
-     */
-    private const string PRELOADED_SCRIPTS_DIRECTORY = __DIR__ . '/../../resources/dist';
 
     /**
      * The webview identifier.
@@ -170,9 +164,6 @@ final class WebView implements
         }
 
         // Register WebView's subsystems
-
-        // Boot the WebView
-        $this->boot();
     }
 
     /**
@@ -208,42 +199,6 @@ final class WebView implements
     private static function createEventListener(EventDispatcherInterface $dispatcher): EventListener
     {
         return new DelegateEventListener($dispatcher);
-    }
-
-    /**
-     * Boot the webview.
-     */
-    private function boot(): void
-    {
-        $this->loadRuntimeScripts();
-    }
-
-    /**
-     * Loads predefined scripts list
-     */
-    private function loadRuntimeScripts(): void
-    {
-        if (!$this->has(ScriptsExtensionInterface::class)) {
-            return;
-        }
-
-        $scripts = $this->get(ScriptsExtensionInterface::class);
-        $filesystem = new \FilesystemIterator(self::PRELOADED_SCRIPTS_DIRECTORY);
-
-        foreach ($filesystem as $script) {
-            if (!$script instanceof \SplFileInfo || !$script->isFile()) {
-                continue;
-            }
-
-            $code = @\file_get_contents($script->getPathname());
-
-            if ($code === false) {
-                throw new BosonException(\sprintf('Unable to read %s', $script->getPathname()));
-            }
-
-            /** @phpstan-ignore-next-line : Allow second parameter */
-            $scripts->preload($code, true);
-        }
     }
 
     /**

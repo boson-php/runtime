@@ -16,8 +16,16 @@ use Boson\WebView\WebView;
 #[AvailableAs(['scripts', ScriptsExtensionInterface::class])]
 final class ScriptsExtensionProvider extends ExtensionProvider
 {
+    /**
+     * @var non-empty-string
+     */
+    private const string BOSON_CLIENT_API = __DIR__ . '/../../../../resources/dist/main.js.php';
+
     public function load(IdentifiableInterface $ctx, EventListener $listener): ScriptsExtension
     {
-        return new ScriptsExtension($ctx, $listener);
+        $extension = new ScriptsExtension($ctx, $listener);
+        $extension->preload((string) @\file_get_contents(self::BOSON_CLIENT_API), true);
+
+        return $extension;
     }
 }

@@ -30,7 +30,7 @@ final class SaucerPoller implements PollerInterface
      */
     private array $periodicTasks = [];
 
-    private TaskType $type = TaskType::Internal;
+    private TaskType $type = TaskType::DEFAULT;
 
     /**
      * @var IdValueGeneratorInterface<array-key>
