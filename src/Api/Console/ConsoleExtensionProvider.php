@@ -31,7 +31,7 @@ final class ConsoleExtensionProvider extends ExtensionProvider
         // Detach console in case of:
         // 1) Debug mode is disabled
         // 2) And application running in PHAR
-        if ($driver !== null && $ctx->isDebug && $this->isRunningInPhar()) {
+        if ($driver !== null && !$ctx->isDebug && $this->isRunningInPhar()) {
             $listener->dispatch($intention = new ConsoleDetaching($ctx, $driver));
 
             if ($intention->isCancelled) {
