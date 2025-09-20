@@ -6,8 +6,10 @@ namespace Boson\Internal\Poller;
 
 use Boson\ApplicationId;
 use Boson\Component\Saucer\SaucerInterface;
+use Boson\Poller\CancellableTask;
 use Boson\Poller\PollerInterface;
 use Boson\Poller\Suspension;
+use Boson\Poller\TaskInterface;
 use Boson\Shared\IdValueGenerator\IdValueGeneratorInterface;
 use Boson\Shared\IdValueGenerator\PlatformDependentIntValueGenerator;
 use FFI\CData;
@@ -76,6 +78,9 @@ final class SaucerPoller implements PollerInterface
                 break;
         }
 
+        // Reduces CPU usage
+        \time_nanosleep(0, 1);
+
         $this->type = $this->type->next();
     }
 
@@ -104,35 +109,35 @@ final class SaucerPoller implements PollerInterface
         }
     }
 
-    public function defer(callable $task): int|string
+    public function defer(callable $task): CancellableTask
     {
         $this->queueTasks[$id = $this->ids->nextId()] = $task(...);
 
-        return $id;
+        return new CancellableTask($this, $id);
     }
 
-    public function repeat(callable $task): int|string
+    public function repeat(callable $task): CancellableTask
     {
         $this->periodicTasks[$id = $this->ids->nextId()] = $task(...);
 
-        return $id;
+        return new CancellableTask($this, $id);
     }
 
-    public function delay(float $delay, callable $task): int|string
+    public function delay(float $delay, callable $task): CancellableTask
     {
         $stopsAfter = \microtime(true) + $delay;
 
-        return $this->repeat(function (string|int $taskId) use ($stopsAfter, $task): void {
+        return $this->repeat(function (TaskInterface $id) use ($stopsAfter, $task): void {
             if (\microtime(true) > $stopsAfter) {
-                $task($taskId);
+                $task($id);
 
-                $this->cancel($taskId);
+                $this->cancel($id);
             }
         });
     }
 
-    public function cancel(int|string $taskId): void
+    public function cancel(TaskInterface $task): void
     {
-        unset($this->periodicTasks[$taskId], $this->queueTasks[$taskId]);
+        unset($this->periodicTasks[$task->id], $this->queueTasks[$task->id]);
     }
 }
