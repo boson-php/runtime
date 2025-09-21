@@ -168,6 +168,7 @@ final readonly class ApplicationCreateInfo
     {
         /**
          * @var ExtensionProviderInterface<Application> $extension
+         *
          * @phpstan-ignore-next-line PHPStan does not support this constant
          */
         foreach (self::DEFAULT_APPLICATION_EXTENSIONS as $extension) {

@@ -133,6 +133,7 @@ final readonly class WindowCreateInfo
     {
         /**
          * @var ExtensionProviderInterface<Window> $extension
+         *
          * @phpstan-ignore-next-line PHPStan does not support this constant
          */
         foreach (self::DEFAULT_WINDOW_EXTENSIONS as $extension) {

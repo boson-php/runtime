@@ -180,6 +180,7 @@ final readonly class WebViewCreateInfo
     {
         /**
          * @var ExtensionProviderInterface<WebView> $extension
+         *
          * @phpstan-ignore-next-line PHPStan does not support this constant
          */
         foreach (self::DEFAULT_WEBVIEW_EXTENSIONS as $extension) {
