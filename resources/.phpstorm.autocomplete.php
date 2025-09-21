@@ -6,7 +6,7 @@ namespace Boson {
 
     use Boson\Api\CentralProcessor\CentralProcessorExtensionInterface;
     use Boson\Api\Dialog\DialogExtensionInterface;
-    use Boson\Api\MessageBox\MessageBoxExtensionInterface;
+    use Boson\Api\Alert\AlertExtensionInterface;
     use Boson\Api\OperatingSystem\OperatingSystemExtensionInterface;
 
     class Application
@@ -25,11 +25,6 @@ namespace Boson {
          * Gets access to the OS Information API of the application.
          */
         public readonly OperatingSystemExtensionInterface $os;
-
-        /**
-         * Gets access to the Message Box API of the application.
-         */
-        public readonly MessageBoxExtensionInterface $msgbox;
     }
 
 }

@@ -6,8 +6,8 @@ parameters:
     - resources/stubs/ffi.stub.php
   excludePaths:
     - src/Api/Console/Driver/Windows/Kernel32.php
-    - src/Api/MessageBox/Driver/Windows/User32.php
-    - src/Api/MessageBox/Driver/MacOS/LibObjectC.php
+    - src/Api/Alert/Driver/Windows/User32.php
+    - src/Api/Alert/Driver/MacOS/LibObjectC.php
   strictRules:
     allRules: true
   fileExtensions:

@@ -29,7 +29,7 @@ namespace Boson\Api\Console\Driver\Windows {
 
 }
 
-namespace Boson\Api\MessageBox\Driver\Windows {
+namespace Boson\Api\Alert\Driver\Windows {
 
 
     use FFI\CData;
@@ -96,7 +96,7 @@ namespace Boson\Api\MessageBox\Driver\Windows {
 
 }
 
-namespace Boson\Api\MessageBox\Driver\MacOS {
+namespace Boson\Api\Alert\Driver\MacOS {
 
     use FFI\CData;
     use FFI\CType;

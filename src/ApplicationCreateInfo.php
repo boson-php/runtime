@@ -8,7 +8,6 @@ use Boson\Api\Autorun\AutorunExtensionProvider;
 use Boson\Api\CentralProcessor\CentralProcessorExtensionProvider;
 use Boson\Api\Console\ConsoleExtensionProvider;
 use Boson\Api\Dialog\DialogExtensionProvider;
-use Boson\Api\MessageBox\MessageBoxExtensionProvider;
 use Boson\Api\OperatingSystem\OperatingSystemExtensionProvider;
 use Boson\Api\QuitHandler\QuitHandlerExtensionProvider;
 use Boson\Api\QuitOnClose\QuitOnCloseExtensionProvider;
@@ -28,7 +27,6 @@ use Boson\Window\WindowCreateInfo;
     new ConsoleExtensionProvider(),
     new QuitHandlerExtensionProvider(),
     new AutorunExtensionProvider(),
-    new MessageBoxExtensionProvider(),
 ]);
 
 /**
