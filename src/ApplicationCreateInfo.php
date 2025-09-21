@@ -157,4 +157,27 @@ final readonly class ApplicationCreateInfo
 
         return $result;
     }
+
+    /**
+     * @param list<ExtensionProviderInterface<Application>> $with
+     * @param list<class-string<ExtensionProviderInterface<Application>>> $except
+     *
+     * @return iterable<array-key, ExtensionProviderInterface<Application>>
+     */
+    public static function extensions(array $with = [], array $except = []): iterable
+    {
+        /**
+         * @var ExtensionProviderInterface<Application> $extension
+         * @phpstan-ignore-next-line PHPStan does not support this constant
+         */
+        foreach (self::DEFAULT_APPLICATION_EXTENSIONS as $extension) {
+            if (\in_array($extension::class, $except, true)) {
+                continue;
+            }
+
+            yield $extension;
+        }
+
+        yield from $with;
+    }
 }

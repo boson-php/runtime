@@ -169,4 +169,27 @@ final readonly class WebViewCreateInfo
     {
         return \iterator_to_array($extensions, false);
     }
+
+    /**
+     * @param list<ExtensionProviderInterface<WebView>> $with
+     * @param list<class-string<ExtensionProviderInterface<WebView>>> $except
+     *
+     * @return iterable<array-key, ExtensionProviderInterface<WebView>>
+     */
+    public static function extensions(array $with = [], array $except = []): iterable
+    {
+        /**
+         * @var ExtensionProviderInterface<WebView> $extension
+         * @phpstan-ignore-next-line PHPStan does not support this constant
+         */
+        foreach (self::DEFAULT_WEBVIEW_EXTENSIONS as $extension) {
+            if (\in_array($extension::class, $except, true)) {
+                continue;
+            }
+
+            yield $extension;
+        }
+
+        yield from $with;
+    }
 }
