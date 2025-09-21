@@ -57,9 +57,7 @@ final class SchemesExtension extends WebViewExtension implements SchemesExtensio
             $code = SchemeError::SAUCER_REQUEST_ERROR_FAILED;
             $this->app->saucer->saucer_scheme_executor_reject($executor, $code);
 
-            $this->app->poller->defer(static function () use ($e) {
-                throw $e;
-            });
+            $this->app->poller->throw($e);
 
             return;
         }

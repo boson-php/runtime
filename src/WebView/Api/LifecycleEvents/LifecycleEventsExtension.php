@@ -116,9 +116,7 @@ final class LifecycleEventsExtension extends WebViewExtension
         try {
             return $this->onMessageReceived($message);
         } catch (\Throwable $e) {
-            $this->webview->window->app->poller->defer(static function () use ($e) {
-                throw $e;
-            });
+            $this->webview->window->app->poller->throw($e);
         }
 
         return true;
@@ -138,9 +136,7 @@ final class LifecycleEventsExtension extends WebViewExtension
         try {
             $this->onDomReady($_);
         } catch (\Throwable $e) {
-            $this->webview->window->app->poller->defer(static function () use ($e) {
-                throw $e;
-            });
+            $this->webview->window->app->poller->throw($e);
         }
     }
 
@@ -152,9 +148,7 @@ final class LifecycleEventsExtension extends WebViewExtension
                 url: Request::castUrl($url),
             ));
         } catch (\Throwable $e) {
-            $this->webview->window->app->poller->defer(static function () use ($e) {
-                throw $e;
-            });
+            $this->webview->window->app->poller->throw($e);
         }
     }
 
@@ -163,9 +157,7 @@ final class LifecycleEventsExtension extends WebViewExtension
         try {
             $this->onNavigated($_, $url);
         } catch (\Throwable $e) {
-            $this->webview->window->app->poller->defer(static function () use ($e) {
-                throw $e;
-            });
+            $this->webview->window->app->poller->throw($e);
         }
     }
 
@@ -195,9 +187,7 @@ final class LifecycleEventsExtension extends WebViewExtension
         try {
             return $this->onNavigating($_, $navigation);
         } catch (\Throwable $e) {
-            $this->webview->window->app->poller->defer(static function () use ($e) {
-                throw $e;
-            });
+            $this->webview->window->app->poller->throw($e);
 
             return Policy::SAUCER_POLICY_BLOCK;
         }
@@ -223,9 +213,7 @@ final class LifecycleEventsExtension extends WebViewExtension
         try {
             $this->onFaviconChanged($ptr, $icon);
         } catch (\Throwable $e) {
-            $this->webview->window->app->poller->defer(static function () use ($e) {
-                throw $e;
-            });
+            $this->webview->window->app->poller->throw($e);
         }
     }
 
@@ -244,9 +232,7 @@ final class LifecycleEventsExtension extends WebViewExtension
         try {
             $this->onTitleChanged($ptr, $title);
         } catch (\Throwable $e) {
-            $this->webview->window->app->poller->defer(static function () use ($e) {
-                throw $e;
-            });
+            $this->webview->window->app->poller->throw($e);
         }
     }
 

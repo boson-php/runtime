@@ -21,6 +21,14 @@ interface PollerInterface
     public function createSuspension(): SuspensionInterface;
 
     /**
+     * Sends an exception to the main execution thread.
+     *
+     * @return TaskIdType a unique identifier that can be used to cancel
+     *         an exception throwing
+     */
+    public function throw(\Throwable $e): int|string;
+
+    /**
      * Defer the execution of a callback.
      *
      * @param callable(TaskIdType):void $task the callback to defer
@@ -50,6 +58,17 @@ interface PollerInterface
      *         cancel the callback
      */
     public function delay(float $delay, callable $task): int|string;
+
+    /**
+     * Repeatedly execute a callback with delay.
+     *
+     * @param float $interval the amount of time, in seconds, to interval the execution for
+     * @param callable(TaskIdType):void $task the callback to execute
+     *
+     * @return TaskIdType a unique identifier that can be used to cancel
+     *         the callback
+     */
+    public function timer(float $interval, callable $task): int|string;
 
     /**
      * Cancel a task.

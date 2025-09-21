@@ -23,12 +23,12 @@ final class SaucerPoller implements PollerInterface
     /**
      * @var array<array-key, \Closure(array-key):void>
      */
-    private array $queueTasks = [];
+    private array $microTasks = [];
 
     /**
      * @var array<array-key, \Closure(array-key):void>
      */
-    private array $periodicTasks = [];
+    private array $periodicMicroTasks = [];
 
     private TaskType $type = TaskType::DEFAULT;
 
@@ -60,6 +60,11 @@ final class SaucerPoller implements PollerInterface
         return new Suspension($this);
     }
 
+    public function throw(\Throwable $e): int|string
+    {
+        return $this->defer(static fn(): never => throw $e);
+    }
+
     public function next(): void
     {
         switch ($this->type) {
@@ -89,7 +94,7 @@ final class SaucerPoller implements PollerInterface
 
     private function executePeriodicTask(): void
     {
-        foreach ($this->periodicTasks as $id => $task) {
+        foreach ($this->periodicMicroTasks as $id => $task) {
             $task($id);
 
             return;
@@ -98,8 +103,8 @@ final class SaucerPoller implements PollerInterface
 
     private function executeQueuedTask(): void
     {
-        foreach ($this->queueTasks as $id => $task) {
-            unset($this->queueTasks[$id]);
+        foreach ($this->microTasks as $id => $task) {
+            unset($this->microTasks[$id]);
 
             $task($id);
 
@@ -109,14 +114,14 @@ final class SaucerPoller implements PollerInterface
 
     public function defer(callable $task): int|string
     {
-        $this->queueTasks[$id = $this->ids->nextId()] = $task(...);
+        $this->microTasks[$id = $this->ids->nextId()] = $task(...);
 
         return $id;
     }
 
     public function repeat(callable $task): int|string
     {
-        $this->periodicTasks[$id = $this->ids->nextId()] = $task(...);
+        $this->periodicMicroTasks[$id = $this->ids->nextId()] = $task(...);
 
         return $id;
     }
@@ -134,8 +139,21 @@ final class SaucerPoller implements PollerInterface
         });
     }
 
+    public function timer(float $interval, callable $task): int|string
+    {
+        $execAfter = \microtime(true) + $interval;
+
+        return $this->repeat(function (string|int $taskId) use (&$execAfter, $interval, $task): void {
+            if (\microtime(true) > $execAfter) {
+                $task($taskId);
+
+                $execAfter += $interval;
+            }
+        });
+    }
+
     public function cancel(int|string $taskId): void
     {
-        unset($this->periodicTasks[$taskId], $this->queueTasks[$taskId]);
+        unset($this->periodicMicroTasks[$taskId], $this->microTasks[$taskId]);
     }
 }
