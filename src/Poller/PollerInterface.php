@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Boson\Poller;
 
 /**
- * @template TTaskId of array-key = array-key
+ * @phpstan-type TaskIdType array-key
  */
 interface PollerInterface
 {
@@ -23,39 +23,43 @@ interface PollerInterface
     /**
      * Defer the execution of a callback.
      *
-     * @param callable(TaskInterface<TTaskId>):void $task the callback to defer
+     * @param callable(TaskIdType):void $task the callback to defer
      *
-     * @return TaskInterface<TTaskId>
+     * @return TaskIdType a unique identifier that can be used to cancel
+     *         the callback
      */
-    public function defer(callable $task): TaskInterface;
+    public function defer(callable $task): int|string;
 
     /**
      * Repeatedly execute a callback.
      *
-     * @param callable(TaskInterface<TTaskId>):void $task the callback to execute
+     * @param callable(TaskIdType):void $task the callback to execute
      *
-     * @return TaskInterface<TTaskId>
+     * @return TaskIdType a unique identifier that can be used to cancel
+     *         the callback
      */
-    public function repeat(callable $task): TaskInterface;
+    public function repeat(callable $task): int|string;
 
     /**
      * Delay the execution of a callback.
      *
      * @param float $delay the amount of time, in seconds, to delay the execution for
-     * @param callable(TaskInterface<TTaskId>):void $task the callback to delay
+     * @param callable(TaskIdType):void $task the callback to delay
      *
-     * @return TaskInterface<TTaskId>
+     * @return TaskIdType a unique identifier that can be used to
+     *         cancel the callback
      */
-    public function delay(float $delay, callable $task): TaskInterface;
+    public function delay(float $delay, callable $task): int|string;
 
     /**
      * Cancel a task.
      *
      * This will detach the event loop from all resources that are associated
      * to the callback. After this operation the callback is permanently
-     * invalid.
+     * invalid. Calling this function MUST NOT fail, even if passed an invalid
+     * identifier.
      *
-     * @param TaskInterface<TTaskId> $task
+     * @param TaskIdType $taskId the callback identifier
      */
-    public function cancel(TaskInterface $task): void;
+    public function cancel(int|string $taskId): void;
 }

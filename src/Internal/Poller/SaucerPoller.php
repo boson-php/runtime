@@ -6,10 +6,8 @@ namespace Boson\Internal\Poller;
 
 use Boson\ApplicationId;
 use Boson\Component\Saucer\SaucerInterface;
-use Boson\Poller\CancellableTask;
 use Boson\Poller\PollerInterface;
 use Boson\Poller\Suspension;
-use Boson\Poller\TaskInterface;
 use Boson\Shared\IdValueGenerator\IdValueGeneratorInterface;
 use Boson\Shared\IdValueGenerator\PlatformDependentIntValueGenerator;
 use FFI\CData;
@@ -109,35 +107,35 @@ final class SaucerPoller implements PollerInterface
         }
     }
 
-    public function defer(callable $task): CancellableTask
+    public function defer(callable $task): int|string
     {
         $this->queueTasks[$id = $this->ids->nextId()] = $task(...);
 
-        return new CancellableTask($this, $id);
+        return $id;
     }
 
-    public function repeat(callable $task): CancellableTask
+    public function repeat(callable $task): int|string
     {
         $this->periodicTasks[$id = $this->ids->nextId()] = $task(...);
 
-        return new CancellableTask($this, $id);
+        return $id;
     }
 
-    public function delay(float $delay, callable $task): CancellableTask
+    public function delay(float $delay, callable $task): int|string
     {
         $stopsAfter = \microtime(true) + $delay;
 
-        return $this->repeat(function (TaskInterface $id) use ($stopsAfter, $task): void {
+        return $this->repeat(function (string|int $taskId) use ($stopsAfter, $task): void {
             if (\microtime(true) > $stopsAfter) {
-                $task($id);
+                $task($taskId);
 
-                $this->cancel($id);
+                $this->cancel($taskId);
             }
         });
     }
 
-    public function cancel(TaskInterface $task): void
+    public function cancel(int|string $taskId): void
     {
-        unset($this->periodicTasks[$task->id], $this->queueTasks[$task->id]);
+        unset($this->periodicTasks[$taskId], $this->queueTasks[$taskId]);
     }
 }
