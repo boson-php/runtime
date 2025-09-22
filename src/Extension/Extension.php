@@ -4,55 +4,76 @@ declare(strict_types=1);
 
 namespace Boson\Extension;
 
-use Boson\Contracts\EventListener\Subscription\CancellableSubscriptionInterface;
 use Boson\Contracts\Id\IdentifiableInterface;
-use Boson\Dispatcher\Event;
-use Boson\Dispatcher\EventListener;
-use Boson\Dispatcher\Intention;
-use Boson\Internal\StructPointerId;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\Attribute\DependsOn;
 
 /**
- * @template TContext of IdentifiableInterface<StructPointerId>
+ * @template TContext of IdentifiableInterface = IdentifiableInterface
+ *
+ * @template-implements ExtensionInterface<TContext>
+ *
+ * @phpstan-import-type DependencyType from ExtensionInterface
+ * @phpstan-import-type AliasType from ExtensionInterface
  */
-abstract class Extension
+abstract class Extension implements ExtensionInterface
 {
-    public function __construct(
-        protected readonly EventListener $listener,
-    ) {}
-
     /**
-     * @template TArgEvent of object
-     *
-     * @param class-string<TArgEvent> $event the event (class) name
-     * @param callable(TArgEvent):void $then the listener callback
-     *
-     * @return CancellableSubscriptionInterface<TArgEvent>
+     * @var list<AliasType>
      */
-    protected function listen(string $event, callable $then): CancellableSubscriptionInterface
-    {
-        return $this->listener->addEventListener($event, $then);
+    public array $aliases {
+        get => $this->aliases ??= $this->getAliasesFromAttributes();
     }
 
     /**
-     * Dispatch intention instance and returns {@see false} in
-     * case of intention has been cancelled.
-     *
-     * @param Intention<TContext> $intention
+     * @var list<DependencyType>
      */
-    protected function intent(Intention $intention): bool
-    {
-        $this->listener->dispatch($intention);
-
-        return $intention->isCancelled === false;
+    public array $dependencies {
+        get => $this->dependencies ??= $this->getDependenciesFromAttributes();
     }
 
     /**
-     * Dispatch immutable event.
-     *
-     * @param Event<TContext> $event
+     * @return list<AliasType>
      */
-    protected function dispatch(Event $event): void
+    private function getAliasesFromAttributes(): array
     {
-        $this->listener->dispatch($event);
+        $aliases = [];
+
+        foreach ($this->getClassAttributes(AvailableAs::class) as $attr) {
+            $aliases = \array_merge($aliases, $attr->aliases);
+        }
+
+        return $aliases;
+    }
+
+    /**
+     * @return list<DependencyType>
+     */
+    private function getDependenciesFromAttributes(): array
+    {
+        $aliases = [];
+
+        foreach ($this->getClassAttributes(DependsOn::class) as $attr) {
+            $aliases = \array_merge($aliases, $attr->dependencies);
+        }
+
+        return $aliases;
+    }
+
+    /**
+     * @template TArgAttribute of object
+     *
+     * @param class-string<TArgAttribute> $class
+     *
+     * @return iterable<array-key, TArgAttribute>
+     */
+    private function getClassAttributes(string $class): iterable
+    {
+        $reflectionAttributes = new \ReflectionClass(static::class)
+            ->getAttributes($class);
+
+        foreach ($reflectionAttributes as $reflectionAttribute) {
+            yield $reflectionAttribute->newInstance();
+        }
     }
 }

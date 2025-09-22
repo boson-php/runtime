@@ -4,49 +4,21 @@ declare(strict_types=1);
 
 namespace Boson\Api\OperatingSystem;
 
-use Boson\Api\ApplicationExtension;
-use Boson\Component\OsInfo\OperatingSystem;
-use Boson\Contracts\OsInfo\FamilyInterface;
+use Boson\Application;
+use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Contracts\OsInfo\OperatingSystemInterface;
-use Boson\Contracts\OsInfo\StandardInterface;
+use Boson\Dispatcher\EventListener;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\Extension;
 
 /**
- * @internal this is an internal library class, please do not use it in your code
- * @psalm-internal Boson\Api\OperatingSystem
+ * @template-extends Extension<Application>
  */
-final class OperatingSystemExtension extends ApplicationExtension implements
-    OperatingSystemExtensionInterface
+#[AvailableAs('os', OperatingSystemInfoInterface::class, OperatingSystemInterface::class)]
+final class OperatingSystemExtension extends Extension
 {
-    private OperatingSystemInterface $os {
-        get => $this->os ??= OperatingSystem::createFromGlobals();
-    }
-
-    public string $name {
-        get => $this->os->name;
-    }
-
-    public string $version {
-        get => $this->os->version;
-    }
-
-    public ?string $codename {
-        get => $this->os->codename;
-    }
-
-    public ?string $edition {
-        get => $this->os->edition;
-    }
-
-    public FamilyInterface $family {
-        get => $this->os->family;
-    }
-
-    public iterable $standards {
-        get => $this->os->standards;
-    }
-
-    public function isSupports(StandardInterface $standard): bool
+    public function load(IdentifiableInterface $ctx, EventListener $listener): OperatingSystemInfo
     {
-        return $this->os->isSupports($standard);
+        return new OperatingSystemInfo();
     }
 }

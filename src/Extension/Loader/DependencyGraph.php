@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Boson\Extension\Loader;
 
 use Boson\Contracts\Id\IdentifiableInterface;
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\ExtensionInterface;
 
 /**
  * Resolves dependencies between extension providers and
@@ -13,7 +13,7 @@ use Boson\Extension\ExtensionProviderInterface;
  *
  * @template TContext of IdentifiableInterface
  *
- * @phpstan-type ProviderType ExtensionProviderInterface<TContext>
+ * @phpstan-type ProviderType ExtensionInterface<TContext>
  * @phpstan-type ProviderIdType class-string<ProviderType>
  * @phpstan-type ProvidersMapType array<ProviderIdType, ProviderType>
  *
@@ -70,7 +70,7 @@ final class DependencyGraph implements \IteratorAggregate
      *
      * @param ProviderType $provider
      */
-    private function assertHasNoRecursiveDependencies(ExtensionProviderInterface $provider): void
+    private function assertHasNoRecursiveDependencies(ExtensionInterface $provider): void
     {
         foreach ($this->dependencies as $stack) {
             if ($stack !== $provider) {
@@ -90,7 +90,7 @@ final class DependencyGraph implements \IteratorAggregate
      *
      * @param ProviderType $provider
      */
-    private function prepare(ExtensionProviderInterface $provider): void
+    private function prepare(ExtensionInterface $provider): void
     {
         $this->assertHasNoRecursiveDependencies($provider);
 
@@ -103,7 +103,7 @@ final class DependencyGraph implements \IteratorAggregate
      *
      * @param ProviderType $provider
      */
-    private function complete(ExtensionProviderInterface $provider): void
+    private function complete(ExtensionInterface $provider): void
     {
         $this->markAsLoaded($provider);
 
@@ -115,7 +115,7 @@ final class DependencyGraph implements \IteratorAggregate
      *
      * @param ProviderType $provider
      */
-    private function markAsLoaded(ExtensionProviderInterface $provider): void
+    private function markAsLoaded(ExtensionInterface $provider): void
     {
         if (isset($this->loaded[$provider::class])) {
             return;
@@ -130,7 +130,7 @@ final class DependencyGraph implements \IteratorAggregate
      * @param ProviderType $provider
      * @param ProvidersMapType $registered
      */
-    private function register(ExtensionProviderInterface $provider, array $registered): void
+    private function register(ExtensionInterface $provider, array $registered): void
     {
         $this->prepare($provider);
 

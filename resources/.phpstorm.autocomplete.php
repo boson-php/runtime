@@ -4,27 +4,26 @@ declare(strict_types=1);
 
 namespace Boson {
 
-    use Boson\Api\CentralProcessor\CentralProcessorExtensionInterface;
-    use Boson\Api\Dialog\DialogExtensionInterface;
-    use Boson\Api\Alert\AlertExtensionInterface;
-    use Boson\Api\OperatingSystem\OperatingSystemExtensionInterface;
+    use Boson\Api\CentralProcessor\CentralProcessorInfoInterface;
+    use Boson\Api\Dialog\DialogApiInterface;
+    use Boson\Api\OperatingSystem\OperatingSystemInfoInterface;
 
     class Application
     {
         /**
          * Gets access to the Dialog API of the application.
          */
-        public readonly DialogExtensionInterface $dialog;
+        public readonly DialogApiInterface $dialog;
 
         /**
          * Gets access to the CPU Information API of the application.
          */
-        public readonly CentralProcessorExtensionInterface $cpu;
+        public readonly CentralProcessorInfoInterface $cpu;
 
         /**
          * Gets access to the OS Information API of the application.
          */
-        public readonly OperatingSystemExtensionInterface $os;
+        public readonly OperatingSystemInfoInterface $os;
     }
 
 }
@@ -40,12 +39,11 @@ namespace Boson\Window {
 
 namespace Boson\WebView {
 
-    use Boson\WebView\Api\Bindings\BindingsExtensionInterface;
-    use Boson\WebView\Api\Data\DataExtensionInterface;
-    use Boson\WebView\Api\Schemes\SchemesExtensionInterface;
-    use Boson\WebView\Api\Scripts\ScriptsExtensionInterface;
-    use Boson\WebView\Api\Security\SecurityExtensionInterface;
-    use Boson\WebView\Api\WebComponents\WebComponentsExtensionInterface;
+    use Boson\WebView\Api\Bindings\BindingsApiInterface;
+    use Boson\WebView\Api\Data\DataRetrieverInterface;
+    use Boson\WebView\Api\Schemes\SchemesProviderInterface;
+    use Boson\WebView\Api\Scripts\ScriptsApiInterface;
+    use Boson\WebView\Api\Security\SecurityInfoInterface;
 
     class WebView
     {
@@ -55,7 +53,7 @@ namespace Boson\WebView {
          * Provides the ability to register PHP functions
          * in the webview.
          */
-        public readonly BindingsExtensionInterface $bindings;
+        public readonly BindingsApiInterface $bindings;
 
         /**
          * Gets access to the Data API of the webview.
@@ -63,12 +61,12 @@ namespace Boson\WebView {
          * Provides the ability to receive variant data from
          * the current document.
          */
-        public readonly DataExtensionInterface $data;
+        public readonly DataRetrieverInterface $data;
 
         /**
          * Gets access to the Schemes API of the webview.
          */
-        public readonly SchemesExtensionInterface $schemes;
+        public readonly SchemesProviderInterface $schemes;
 
         /**
          * Gets access to the Scripts API of the webview.
@@ -76,12 +74,12 @@ namespace Boson\WebView {
          * Provides the ability to register a JavaScript code
          * in the webview.
          */
-        public readonly ScriptsExtensionInterface $scripts;
+        public readonly ScriptsApiInterface $scripts;
 
         /**
          * Gets access to the Security API of the webview.
          */
-        public readonly SecurityExtensionInterface $security;
+        public readonly SecurityInfoInterface $security;
 
     }
 

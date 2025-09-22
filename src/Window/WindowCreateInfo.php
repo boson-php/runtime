@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\Window;
 
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\ExtensionInterface;
 use Boson\WebView\WebViewCreateInfo;
 
 //
@@ -22,7 +22,7 @@ use Boson\WebView\WebViewCreateInfo;
 final readonly class WindowCreateInfo
 {
     /**
-     * @var list<ExtensionProviderInterface<Window>>
+     * @var list<ExtensionInterface<Window>>
      *
      * @noinspection PhpUndefinedConstantInspection
      */
@@ -39,12 +39,12 @@ final readonly class WindowCreateInfo
     public const int DEFAULT_HEIGHT = 480;
 
     /**
-     * @var list<ExtensionProviderInterface<Window>>
+     * @var list<ExtensionInterface<Window>>
      */
     public array $extensions;
 
     /**
-     * @param iterable<mixed, ExtensionProviderInterface<Window>> $extensions
+     * @param iterable<mixed, ExtensionInterface<Window>> $extensions
      *        list of enabled window extensions
      */
     public function __construct(
@@ -114,9 +114,9 @@ final readonly class WindowCreateInfo
     }
 
     /**
-     * @param iterable<mixed, ExtensionProviderInterface<Window>> $extensions
+     * @param iterable<mixed, ExtensionInterface<Window>> $extensions
      *
-     * @return list<ExtensionProviderInterface<Window>>
+     * @return list<ExtensionInterface<Window>>
      */
     private static function extensionsToList(iterable $extensions): array
     {
@@ -124,15 +124,15 @@ final readonly class WindowCreateInfo
     }
 
     /**
-     * @param list<ExtensionProviderInterface<Window>> $with
-     * @param list<class-string<ExtensionProviderInterface<Window>>> $except
+     * @param list<ExtensionInterface<Window>> $with
+     * @param list<class-string<ExtensionInterface<Window>>> $except
      *
-     * @return iterable<array-key, ExtensionProviderInterface<Window>>
+     * @return iterable<array-key, ExtensionInterface<Window>>
      */
     public static function extensions(array $with = [], array $except = []): iterable
     {
         /**
-         * @var ExtensionProviderInterface<Window> $extension
+         * @var ExtensionInterface<Window> $extension
          *
          * @phpstan-ignore-next-line PHPStan does not support this constant
          */

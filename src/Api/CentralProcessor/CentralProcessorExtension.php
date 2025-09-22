@@ -4,43 +4,21 @@ declare(strict_types=1);
 
 namespace Boson\Api\CentralProcessor;
 
-use Boson\Api\ApplicationExtension;
-use Boson\Component\CpuInfo\ArchitectureInterface;
-use Boson\Component\CpuInfo\CentralProcessor;
+use Boson\Application;
 use Boson\Component\CpuInfo\CentralProcessorInterface;
+use Boson\Contracts\Id\IdentifiableInterface;
+use Boson\Dispatcher\EventListener;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\Extension;
 
 /**
- * @internal this is an internal library class, please do not use it in your code
- * @psalm-internal Boson\Api\CentralProcessor
+ * @template-extends Extension<Application>
  */
-final class CentralProcessorExtension extends ApplicationExtension implements
-    CentralProcessorExtensionInterface
+#[AvailableAs('cpu', CentralProcessorInfoInterface::class, CentralProcessorInterface::class)]
+final class CentralProcessorExtension extends Extension
 {
-    private CentralProcessorInterface $cpu {
-        get => $this->cpu ??= CentralProcessor::createFromGlobals();
-    }
-
-    public ArchitectureInterface $arch {
-        get => $this->cpu->arch;
-    }
-
-    public string $name {
-        get => $this->cpu->name;
-    }
-
-    public ?string $vendor {
-        get => $this->cpu->vendor;
-    }
-
-    public int $physicalCores {
-        get => $this->cpu->physicalCores;
-    }
-
-    public int $logicalCores {
-        get => $this->cpu->logicalCores;
-    }
-
-    public iterable $instructionSets {
-        get => $this->cpu->instructionSets;
+    public function load(IdentifiableInterface $ctx, EventListener $listener): CentralProcessorInfo
+    {
+        return new CentralProcessorInfo();
     }
 }

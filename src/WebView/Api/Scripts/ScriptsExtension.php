@@ -4,96 +4,28 @@ declare(strict_types=1);
 
 namespace Boson\WebView\Api\Scripts;
 
-use Boson\Component\Saucer\LoadTime;
+use Boson\Contracts\Id\IdentifiableInterface;
 use Boson\Dispatcher\EventListener;
-use Boson\WebView\Api\WebViewExtension;
+use Boson\Extension\Attribute\AvailableAs;
+use Boson\Extension\Extension;
 use Boson\WebView\WebView;
-use JetBrains\PhpStorm\Language;
 
 /**
- * @template-implements \IteratorAggregate<mixed, LoadedScript>
- *
- * @internal this is an internal library class, please do not use it in your code
- * @psalm-internal Boson\WebView
+ * @template-extends Extension<WebView>
  */
-final class ScriptsExtension extends WebViewExtension implements
-    ScriptsExtensionInterface,
-    \IteratorAggregate
+#[AvailableAs('scripts', ScriptsApiInterface::class)]
+final class ScriptsExtension extends Extension
 {
     /**
-     * List of loaded scripts.
-     *
-     * @var \SplObjectStorage<LoadedScript, mixed>
+     * @var non-empty-string
      */
-    private readonly \SplObjectStorage $scripts;
+    private const string BOSON_CLIENT_API = __DIR__ . '/../../../../resources/dist/main.js.php';
 
-    public function __construct(WebView $context, EventListener $listener)
+    public function load(IdentifiableInterface $ctx, EventListener $listener): ScriptsApi
     {
-        parent::__construct($context, $listener);
+        $extension = new ScriptsApi($ctx, $listener);
+        $extension->preload((string) @\file_get_contents(self::BOSON_CLIENT_API), true);
 
-        $this->scripts = new \SplObjectStorage();
-    }
-
-    public function eval(#[Language('JavaScript')] string $code): void
-    {
-        if (\trim($code) === '') {
-            return;
-        }
-
-        $this->app->saucer->saucer_webview_execute($this->ptr, $code);
-    }
-
-    public function preload(#[Language('JavaScript')] string $code, bool $permanent = false): LoadedScript
-    {
-        $handle = $this->app->saucer->saucer_script_new($code, LoadTime::SAUCER_LOAD_TIME_CREATION);
-
-        if ($permanent) {
-            $this->app->saucer->saucer_script_set_permanent($handle, true);
-        }
-
-        return $this->registerAndInject(new LoadedScript(
-            api: $this->app->saucer,
-            id: LoadedScriptId::fromScriptHandle($this->app->saucer, $handle),
-            code: $code,
-            isPermanent: $permanent,
-            time: LoadedScriptLoadingTime::OnCreated,
-        ));
-    }
-
-    public function add(#[Language('JavaScript')] string $code): LoadedScript
-    {
-        $handle = $this->app->saucer->saucer_script_new($code, LoadTime::SAUCER_LOAD_TIME_READY);
-
-        return $this->registerAndInject(new LoadedScript(
-            api: $this->app->saucer,
-            id: LoadedScriptId::fromScriptHandle($this->app->saucer, $handle),
-            code: $code,
-            isPermanent: false,
-            time: LoadedScriptLoadingTime::OnReady,
-        ));
-    }
-
-    private function registerAndInject(LoadedScript $script): LoadedScript
-    {
-        $this->scripts->attach($script);
-
-        $this->app->saucer->saucer_webview_inject($this->ptr, $script->id->ptr);
-
-        return $script;
-    }
-
-    public function count(): int
-    {
-        return \count($this->scripts);
-    }
-
-    public function getIterator(): \Traversable
-    {
-        return $this->scripts;
-    }
-
-    public function __destruct()
-    {
-        $this->app->saucer->saucer_webview_clear_scripts($this->ptr);
+        return $extension;
     }
 }

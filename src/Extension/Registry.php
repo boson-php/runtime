@@ -30,7 +30,7 @@ final class Registry implements ContainerInterface
     private array $publicExtensions = [];
 
     /**
-     * @var list<ExtensionProviderInterface<TContext>>
+     * @var list<ExtensionInterface<TContext>>
      */
     private array $providers = [];
 
@@ -38,7 +38,7 @@ final class Registry implements ContainerInterface
 
     /**
      * @param TContext $context
-     * @param iterable<array-key, ExtensionProviderInterface<TContext>> $providers
+     * @param iterable<array-key, ExtensionInterface<TContext>> $providers
      *
      * @throws ExtensionLoadingException
      */

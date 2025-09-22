@@ -15,16 +15,16 @@ use Boson\Dispatcher\EventListenerProvider;
 use Boson\Extension\Exception\ExtensionNotFoundException;
 use Boson\Extension\Registry;
 use Boson\Shared\Marker\BlockingOperation;
-use Boson\WebView\Api\Bindings\BindingsExtension;
-use Boson\WebView\Api\Bindings\BindingsExtensionInterface;
+use Boson\WebView\Api\Bindings\BindingsApi;
+use Boson\WebView\Api\Bindings\BindingsApiInterface;
 use Boson\WebView\Api\Bindings\Exception\FunctionAlreadyDefinedException;
-use Boson\WebView\Api\Data\DataExtension;
-use Boson\WebView\Api\Data\DataExtensionInterface;
-use Boson\WebView\Api\Scripts\ScriptsExtension;
-use Boson\WebView\Api\Scripts\ScriptsExtensionInterface;
+use Boson\WebView\Api\Data\DataRetriever;
+use Boson\WebView\Api\Data\DataRetrieverInterface;
+use Boson\WebView\Api\Scripts\ScriptsApi;
+use Boson\WebView\Api\Scripts\ScriptsApiInterface;
 use Boson\WebView\Api\WebComponents\Exception\ComponentAlreadyDefinedException;
 use Boson\WebView\Api\WebComponents\Exception\WebComponentsApiException;
-use Boson\WebView\Api\WebComponents\WebComponentsExtensionInterface;
+use Boson\WebView\Api\WebComponents\WebComponentsApiInterface;
 use Boson\Window\Window;
 use Boson\Window\WindowId;
 use JetBrains\PhpStorm\Language;
@@ -204,7 +204,7 @@ final class WebView implements
     /**
      * Binds a PHP callback to a new global JavaScript function.
      *
-     * Note: This is facade method of the {@see BindingsExtension::bind()},
+     * Note: This is facade method of the {@see BindingsApi::bind()},
      *       that provides by the {@see $bindings} field. This means that
      *       calling `$webview->functions->bind(...)` should have the same effect.
      *
@@ -216,7 +216,7 @@ final class WebView implements
      *
      * @deprecated please use `$webview->bindings->bind()` instead
      *
-     * @uses BindingsExtensionInterface::bind() WebView Functions API
+     * @uses BindingsApiInterface::bind() WebView Functions API
      */
     public function bind(string $function, \Closure $callback): void
     {
@@ -227,7 +227,7 @@ final class WebView implements
     /**
      * Evaluates arbitrary JavaScript code.
      *
-     * Note: This is facade method of the {@see ScriptsExtension::eval()},
+     * Note: This is facade method of the {@see ScriptsApi::eval()},
      *       that provides by the {@see $scripts} field. This means that
      *       calling `$webview->scripts->eval(...)` should have the same effect.
      *
@@ -237,7 +237,7 @@ final class WebView implements
      *
      * @deprecated please use `$webview->scripts->eval()` instead
      *
-     * @uses ScriptsExtensionInterface::eval() WebView Scripts API
+     * @uses ScriptsApiInterface::eval() WebView Scripts API
      */
     public function eval(#[Language('JavaScript')] string $code): void
     {
@@ -248,7 +248,7 @@ final class WebView implements
     /**
      * Requests arbitrary data from webview using JavaScript code.
      *
-     * Note: This is facade method of the {@see DataExtension::get()},
+     * Note: This is facade method of the {@see DataRetriever::get()},
      *       that provides by the {@see $data} field. This means that
      *       calling `$webview->requests->send(...)` should have the same effect.
      *
@@ -258,7 +258,7 @@ final class WebView implements
      *
      * @deprecated please use `$webview->data->get()` instead
      *
-     * @uses DataExtensionInterface::get() WebView Requests API
+     * @uses DataRetrieverInterface::get() WebView Requests API
      */
     #[BlockingOperation]
     public function data(#[Language('JavaScript')] string $code, ?float $timeout = null): mixed
@@ -280,7 +280,7 @@ final class WebView implements
      *
      * @deprecated please use `$webview->components->add()` instead
      *
-     * @uses WebComponentsExtensionInterface::add() WebView Web Components API
+     * @uses WebComponentsApiInterface::add() WebView Web Components API
      */
     public function defineComponent(string $name, string $component): void
     {

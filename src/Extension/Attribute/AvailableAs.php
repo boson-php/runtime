@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Boson\Extension\Attribute;
 
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Extension\ExtensionInterface;
 
 /**
- * @phpstan-import-type AliasType from ExtensionProviderInterface
+ * @phpstan-import-type AliasType from ExtensionInterface
  */
 #[\Attribute(\Attribute::TARGET_CLASS | \Attribute::IS_REPEATABLE)]
 final readonly class AvailableAs
@@ -18,15 +18,13 @@ final readonly class AvailableAs
     public array $aliases;
 
     /**
-     * @param AliasType|iterable<mixed, AliasType> $alias
+     * @param AliasType $alias
+     * @param AliasType ...$other
      */
     public function __construct(
-        string|iterable $alias,
+        string $alias,
+        string ...$other,
     ) {
-        $this->aliases = match (true) {
-            \is_string($alias) => [$alias],
-            \is_array($alias) => \array_values($alias),
-            default => \iterator_to_array($alias, false),
-        };
+        $this->aliases = \array_values([$alias, ...$other]);
     }
 }

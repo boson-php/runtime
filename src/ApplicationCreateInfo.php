@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Boson;
 
-use Boson\Api\Autorun\AutorunExtensionProvider;
-use Boson\Api\CentralProcessor\CentralProcessorExtensionProvider;
-use Boson\Api\Console\ConsoleExtensionProvider;
-use Boson\Api\Dialog\DialogExtensionProvider;
-use Boson\Api\OperatingSystem\OperatingSystemExtensionProvider;
-use Boson\Api\QuitHandler\QuitHandlerExtensionProvider;
-use Boson\Api\QuitOnClose\QuitOnCloseExtensionProvider;
-use Boson\Extension\ExtensionProviderInterface;
+use Boson\Api\Autorun\AutorunExtension;
+use Boson\Api\CentralProcessor\CentralProcessorExtension;
+use Boson\Api\Console\ConsoleExtension;
+use Boson\Api\Dialog\DialogExtension;
+use Boson\Api\OperatingSystem\OperatingSystemExtension;
+use Boson\Api\QuitOnClose\QuitOnCloseExtension;
+use Boson\Api\QuitSignals\QuitSignalsExtension;
+use Boson\Extension\ExtensionInterface;
 use Boson\Window\WindowCreateInfo;
 
 //
@@ -20,13 +20,13 @@ use Boson\Window\WindowCreateInfo;
 // 2) Only define-like constants allows object instances.
 //
 \define($_ = 'Boson\DEFAULT_APPLICATION_EXTENSIONS', [
-    new CentralProcessorExtensionProvider(),
-    new OperatingSystemExtensionProvider(),
-    new DialogExtensionProvider(),
-    new QuitOnCloseExtensionProvider(),
-    new ConsoleExtensionProvider(),
-    new QuitHandlerExtensionProvider(),
-    new AutorunExtensionProvider(),
+    new CentralProcessorExtension(),
+    new OperatingSystemExtension(),
+    new DialogExtension(),
+    new QuitOnCloseExtension(),
+    new ConsoleExtension(),
+    new QuitSignalsExtension(),
+    new AutorunExtension(),
 ]);
 
 /**
@@ -35,7 +35,7 @@ use Boson\Window\WindowCreateInfo;
 final readonly class ApplicationCreateInfo
 {
     /**
-     * @var list<ExtensionProviderInterface<Application>>
+     * @var list<ExtensionInterface<Application>>
      *
      * @noinspection PhpUndefinedConstantInspection
      */
@@ -57,13 +57,13 @@ final readonly class ApplicationCreateInfo
     public array $schemes;
 
     /**
-     * @var list<ExtensionProviderInterface<Application>>
+     * @var list<ExtensionInterface<Application>>
      */
     public array $extensions;
 
     /**
      * @param iterable<mixed, non-empty-string> $schemes list of scheme names
-     * @param iterable<mixed, ExtensionProviderInterface<Application>> $extensions
+     * @param iterable<mixed, ExtensionInterface<Application>> $extensions
      *        list of enabled application extensions
      */
     public function __construct(
@@ -100,11 +100,11 @@ final readonly class ApplicationCreateInfo
          * all windows have been closed.
          *
          * @deprecated will be removed in future versions it and replaced by
-         *             the presence of the {@see QuitOnCloseExtensionProvider}
+         *             the presence of the {@see QuitOnCloseExtension}
          *             in the {@see $extensions} list.
          *
          *             To disable this functionality, you should remove the
-         *             {@see QuitOnCloseExtensionProvider} from the
+         *             {@see QuitOnCloseExtension} from the
          *             {@see $extensions} list, instead of setting the field
          *             to {@see false}.
          */
@@ -113,11 +113,11 @@ final readonly class ApplicationCreateInfo
          * Automatically starts the application if set to {@see true}.
          *
          * @deprecated will be removed in future versions it and replaced by
-         *             the presence of the {@see AutorunExtensionProvider}
+         *             the presence of the {@see AutorunExtension}
          *             in the {@see $extensions} list.
          *
          *             To disable this functionality, you should remove the
-         *             {@see AutorunExtensionProvider} from the
+         *             {@see AutorunExtension} from the
          *             {@see $extensions} list, instead of setting the field
          *             to {@see false}.
          */
@@ -133,9 +133,9 @@ final readonly class ApplicationCreateInfo
     }
 
     /**
-     * @param iterable<mixed, ExtensionProviderInterface<Application>> $extensions
+     * @param iterable<mixed, ExtensionInterface<Application>> $extensions
      *
-     * @return list<ExtensionProviderInterface<Application>>
+     * @return list<ExtensionInterface<Application>>
      */
     private static function extensionsToList(iterable $extensions): array
     {
@@ -159,15 +159,15 @@ final readonly class ApplicationCreateInfo
     }
 
     /**
-     * @param list<ExtensionProviderInterface<Application>> $with
-     * @param list<class-string<ExtensionProviderInterface<Application>>> $except
+     * @param list<ExtensionInterface<Application>> $with
+     * @param list<class-string<ExtensionInterface<Application>>> $except
      *
-     * @return iterable<array-key, ExtensionProviderInterface<Application>>
+     * @return iterable<array-key, ExtensionInterface<Application>>
      */
     public static function extensions(array $with = [], array $except = []): iterable
     {
         /**
-         * @var ExtensionProviderInterface<Application> $extension
+         * @var ExtensionInterface<Application> $extension
          *
          * @phpstan-ignore-next-line PHPStan does not support this constant
          */
