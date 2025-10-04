@@ -6,7 +6,7 @@ namespace Boson\Api\CentralProcessor;
 
 use Boson\Component\CpuInfo\ArchitectureInterface;
 use Boson\Component\CpuInfo\CentralProcessor;
-use Boson\Component\CpuInfo\InstructionSetInterface;
+use Boson\Component\CpuInfo\CentralProcessorInterface;
 
 /**
  * @internal this is an internal library class, please do not use it in your code
@@ -14,7 +14,7 @@ use Boson\Component\CpuInfo\InstructionSetInterface;
  */
 final class CentralProcessorInfo implements CentralProcessorInfoInterface
 {
-    private CentralProcessor $cpu {
+    private CentralProcessorInterface $cpu {
         get => $this->cpu ??= CentralProcessor::createFromGlobals();
     }
 
@@ -22,28 +22,23 @@ final class CentralProcessorInfo implements CentralProcessorInfoInterface
         get => $this->cpu->arch;
     }
 
-    public string $vendor {
-        get => $this->cpu->vendor;
-    }
-
-    public ?string $name {
+    public string $name {
         get => $this->cpu->name;
     }
 
-    public int $cores {
-        get => $this->cpu->cores;
+    public ?string $vendor {
+        get => $this->cpu->vendor;
     }
 
-    public int $threads {
-        get => $this->cpu->threads;
+    public int $physicalCores {
+        get => $this->cpu->physicalCores;
+    }
+
+    public int $logicalCores {
+        get => $this->cpu->logicalCores;
     }
 
     public iterable $instructionSets {
         get => $this->cpu->instructionSets;
-    }
-
-    public function isSupports(InstructionSetInterface $instructionSet): bool
-    {
-        return $this->cpu->isSupports($instructionSet);
     }
 }
