@@ -75,7 +75,7 @@ final class ScriptsApi extends LoadedWebViewExtension implements
 
     private function registerAndInject(LoadedScript $script): LoadedScript
     {
-        $this->scripts->attach($script);
+        $this->scripts[$script] = null;
 
         $this->app->saucer->saucer_webview_inject($this->ptr, $script->id->ptr);
 

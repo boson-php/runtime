@@ -179,8 +179,8 @@ final class WindowManager implements
     {
         foreach ($this->windows as $proxy) {
             if ($this->windows->getInfo() === $info) {
-                $this->windows->detach($proxy);
-                $this->windows->attach($window, $info);
+                unset($this->windows[$proxy]);
+                $this->windows[$window] = $info;
 
                 return;
             }
