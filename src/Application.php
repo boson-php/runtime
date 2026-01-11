@@ -15,11 +15,11 @@ use Boson\Event\ApplicationStarted;
 use Boson\Event\ApplicationStarting;
 use Boson\Event\ApplicationStopped;
 use Boson\Event\ApplicationStopping;
+use Boson\Exception\ApplicationException;
 use Boson\Exception\NoDefaultWindowException;
 use Boson\Extension\Exception\ExtensionNotFoundException;
 use Boson\Extension\Registry;
 use Boson\Internal\Poller\SaucerPoller;
-use Boson\Internal\ThreadsCountResolver;
 use Boson\Poller\PollerInterface;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\Shared\Marker\RequiresDealloc;
@@ -200,7 +200,7 @@ class Application implements
 
         // Kernel initialization
         $this->saucer = $this->createLibSaucer($info->library);
-        $this->id = $this->createApplicationId($this->saucer, $this->info->name, $this->info->threads);
+        $this->id = $this->createApplicationId($this->saucer, $this->info->name);
         $this->windows = $this->createWindowManager($this->saucer, $this, $info, $this->listener);
         $this->poller = $this->createApplicationPoller($this->saucer);
 
@@ -323,7 +323,7 @@ class Application implements
     private function registerSchemes(): void
     {
         foreach ($this->info->schemes as $scheme) {
-            $this->saucer->saucer_register_scheme($scheme);
+            $this->saucer->saucer_webview_register_scheme($scheme);
         }
     }
 
@@ -358,8 +358,7 @@ class Application implements
      */
     private function onApplicationStarted(): void
     {
-        // Resolve main window lazy proxy (facade)
-        $_ = $this->window->isClosed;
+        $this->windows->boot();
     }
 
     /**
@@ -379,13 +378,12 @@ class Application implements
      * Creates a new application ID
      *
      * @param non-empty-string $name
-     * @param int<1, max>|null $threads
      */
-    protected function createApplicationId(SaucerInterface $api, string $name, ?int $threads): ApplicationId
+    protected function createApplicationId(SaucerInterface $api, string $name): ApplicationId
     {
         return ApplicationId::fromAppHandle(
             api: $api,
-            handle: $this->createApplicationPointer($api, $name, $threads),
+            handle: $this->createApplicationPointer($api, $name),
             name: $name,
         );
     }
@@ -394,17 +392,24 @@ class Application implements
      * Creates a new application instance pointer.
      *
      * @param non-empty-string $name
-     * @param int<1, max>|null $threads
      */
     #[RequiresDealloc]
-    protected function createApplicationPointer(SaucerInterface $api, string $name, ?int $threads): CData
+    protected function createApplicationPointer(SaucerInterface $api, string $name): CData
     {
-        $options = $this->createApplicationOptionsPointer($api, $name, $threads);
+        $options = $this->createApplicationOptionsPointer($api, $name);
 
         try {
-            return $api->saucer_application_init($options);
+            $result = $api->saucer_application_new($options, \FFI::addr(
+                $error = $this->saucer->new('int'),
+            ));
+
+            if ($error->cdata !== 0) {
+                throw new ApplicationException('An internal error occurred while creating application', $error->cdata);
+            }
+
+            return $result;
         } finally {
-            $api->saucer_options_free($options);
+            $api->saucer_application_options_free($options);
         }
     }
 
@@ -412,20 +417,11 @@ class Application implements
      * Creates a new application options pointer.
      *
      * @param non-empty-string $name
-     * @param int<1, max>|null $threads
      */
     #[RequiresDealloc]
-    protected function createApplicationOptionsPointer(SaucerInterface $api, string $name, ?int $threads): CData
+    protected function createApplicationOptionsPointer(SaucerInterface $api, string $name): CData
     {
-        $options = $api->saucer_options_new($name);
-
-        $threads = ThreadsCountResolver::resolve($threads);
-
-        if ($threads !== null) {
-            $api->saucer_options_set_threads($options, $threads);
-        }
-
-        return $options;
+        return $api->saucer_application_options_new($name);
     }
 
     /**
