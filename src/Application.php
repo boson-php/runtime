@@ -16,10 +16,10 @@ use Boson\Event\ApplicationStarting;
 use Boson\Event\ApplicationStopped;
 use Boson\Event\ApplicationStopping;
 use Boson\Exception\ApplicationException;
-use Boson\Exception\NoDefaultWindowException;
+use Boson\Exception\WindowDereferenceException;
 use Boson\Extension\Exception\ExtensionNotFoundException;
 use Boson\Extension\Registry;
-use Boson\Internal\Poller\SaucerPoller;
+use Boson\Internal\Poller\ApplicationOrderedPoller;
 use Boson\Poller\PollerInterface;
 use Boson\Shared\Marker\BlockingOperation;
 use Boson\Shared\Marker\RequiresDealloc;
@@ -85,11 +85,11 @@ class Application implements
         /**
          * Gets the default window of the application.
          *
-         * @throws NoDefaultWindowException in case the default window was
+         * @throws WindowDereferenceException in case the default window was
          *         already closed and removed earlier
          */
         get => $this->windows->default
-            ?? throw NoDefaultWindowException::becauseNoDefaultWindow();
+            ?? throw WindowDereferenceException::becauseNoDefaultWindow();
     }
 
     /**
@@ -102,7 +102,7 @@ class Application implements
         /**
          * Gets the webview manager of the default application window.
          *
-         * @throws NoDefaultWindowException in case the default window was
+         * @throws WindowDereferenceException in case the default window was
          *         already closed and removed earlier
          */
         get => $this->window->webviews;
@@ -118,7 +118,7 @@ class Application implements
         /**
          * Gets the WebView instance associated with the default window.
          *
-         * @throws NoDefaultWindowException in case the default window was
+         * @throws WindowDereferenceException in case the default window was
          *         already closed and removed earlier
          */
         get => $this->window->webview;
@@ -187,24 +187,6 @@ class Application implements
          */
         public readonly ApplicationCreateInfo $info = new ApplicationCreateInfo(),
         ?EventDispatcherInterface $dispatcher = null,
-        /**
-         * @var array<array-key, mixed>
-         *
-         * @deprecated doesn't affect anything anymore and will be removed in future versions
-         */
-        private readonly array $bootHandlers = [],
-        /**
-         * @var array<array-key, mixed>
-         *
-         * @deprecated doesn't affect anything anymore and will be removed in future versions
-         */
-        private readonly array $quitHandlers = [],
-        /**
-         * @var array<array-key, mixed>
-         *
-         * @deprecated doesn't affect anything anymore and will be removed in future versions
-         */
-        private readonly array $deferRunners = [],
     ) {
         // Initialization Application's fields and properties
         $this->isDebug = $this->createIsDebugParameter($info->debug);
@@ -217,8 +199,8 @@ class Application implements
         $this->poller = $this->createApplicationPoller($this->saucer);
 
         // Initialization of Application's API
-        $this->extensions = new Registry($this, $this->listener, $info->extensions);
-        foreach ($this->extensions->boot() as $property => $extension) {
+        $this->extensions = new Registry($this->listener, $info->extensions);
+        foreach ($this->extensions->boot($this) as $property => $extension) {
             // Direct access to dynamic property is 5+ times
             // faster than magic `__get` call.
             $this->__set($property, $extension);
@@ -252,7 +234,7 @@ class Application implements
      */
     protected function createApplicationPoller(SaucerInterface $saucer): PollerInterface
     {
-        $poller = new SaucerPoller($this->id, $saucer);
+        $poller = new ApplicationOrderedPoller($this->id, $saucer);
 
         $poller->defer(function (): void {
             $this->isRunning = true;
@@ -499,8 +481,6 @@ class Application implements
         }
 
         $this->isRunning = false;
-        $this->saucer->saucer_application_quit($this->id->ptr);
-
         $this->listener->dispatch(new ApplicationStopped($this));
     }
 
@@ -514,10 +494,11 @@ class Application implements
     {
         $this->quit();
 
-        $this->windows->destroy();
         $this->extensions->destroy();
+        $this->windows->destroy();
 
-        var_dump(__METHOD__);
+        $this->listener->removeAllEventListeners();
+
         $this->saucer->saucer_application_quit($this->id->ptr);
     }
 

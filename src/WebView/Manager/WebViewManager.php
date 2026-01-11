@@ -6,11 +6,11 @@ namespace Boson\WebView\Manager;
 
 use Boson\Component\Saucer\SaucerInterface;
 use Boson\Component\WeakType\ObservableSet;
-use Boson\Component\WeakType\ReferenceReleaseCallback;
 use Boson\Contracts\EventListener\EventListenerInterface;
 use Boson\Dispatcher\DelegateEventListener;
 use Boson\Dispatcher\EventListener;
 use Boson\Dispatcher\EventListenerProvider;
+use Boson\WebView\Exception\WindowDereferenceException;
 use Boson\WebView\WebView;
 use Boson\WebView\WebViewCreateInfo;
 use Boson\Window\Window;
@@ -61,12 +61,31 @@ final class WebViewManager implements
      */
     private readonly WebViewHandlerFactory $factory;
 
+    /**
+     * Gets a reference to the parent window to which the
+     * specified all children webview instances belongs.
+     */
+    private Window $window {
+        /**
+         * @throws WindowDereferenceException in case of parent window has been removed
+         */
+        get => $this->reference->get()
+            ?? throw WindowDereferenceException::becauseNoParentWindow();
+    }
+
+    /**
+     * @var \WeakReference<Window>
+     */
+    private readonly \WeakReference $reference;
+
     public function __construct(
         private readonly SaucerInterface $api,
-        private readonly Window $window,
+        Window $parent,
         WebViewCreateInfo $info,
         EventDispatcherInterface $dispatcher,
     ) {
+        $this->reference = \WeakReference::create($parent);
+
         // Initialization Window Manager's fields and properties
         $this->webviews = $this->createWebViewsStorage();
         $this->listener = $this->createEventListener($dispatcher);
@@ -104,13 +123,12 @@ final class WebViewManager implements
         return new WebViewHandlerFactory($this->api, $this->window);
     }
 
-
     public function create(WebViewCreateInfo $info = new WebViewCreateInfo()): WebView
     {
         $instance = new WebView(
             saucer: $this->api,
-            id: $this->factory->create($info),
-            window: $this->window,
+            id: $this->factory->create($this->window, $info),
+            parent: $this->window,
             info: $info,
             dispatcher: $this->listener,
         );
@@ -127,10 +145,6 @@ final class WebViewManager implements
      */
     private function onRelease(WebView $webview): void
     {
-        //$this->api->saucer_webview_clear_scripts($window->id->ptr);
-        //$this->api->saucer_webview_clear_embedded($window->id->ptr);
-        //$this->api->saucer_free($window->id->ptr);
-
         // $this->listener->dispatch(new WindowDestroyed($window));
     }
 
@@ -142,11 +156,22 @@ final class WebViewManager implements
         // $this->listener->dispatch(new WindowCreated($window));
     }
 
+    /**
+     * @internal for internal usage only
+     */
     public function destroy(): void
     {
+        /** @var WebView $webview */
         foreach ($this->webviews as $webview) {
             $this->webviews->detach($webview);
+
+            $webview->destroy();
         }
+
+        $this->default = null;
+        $this->listener->removeAllEventListeners();
+
+        \gc_collect_cycles();
     }
 
     public function getIterator(): \Traversable

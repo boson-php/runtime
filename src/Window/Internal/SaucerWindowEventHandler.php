@@ -7,6 +7,7 @@ namespace Boson\Window\Internal;
 use Boson\Component\Saucer\Policy;
 use Boson\Component\Saucer\SaucerInterface;
 use Boson\Component\Saucer\WindowEvent;
+use Boson\Component\WeakType\WeakClosure;
 use Boson\Internal\Window\CSaucerWindowEventsStruct;
 use Boson\Window\Event\WindowClosed;
 use Boson\Window\Event\WindowClosing;
@@ -60,11 +61,14 @@ final readonly class SaucerWindowEventHandler
      */
     private CData $handlers;
 
+    private \WeakReference $ref;
+
     public function __construct(
         private SaucerInterface $api,
-        private Window $window,
+        Window $window,
         private EventDispatcherInterface $dispatcher,
     ) {
+        $this->ref = \WeakReference::create($window);
         $this->handlers = $this->createEventHandlers();
 
         $this->listenEvents();
@@ -73,14 +77,17 @@ final readonly class SaucerWindowEventHandler
     private function createEventHandlers(): CData
     {
         $struct = $this->api->new(self::WINDOW_HANDLER_STRUCT);
+        $self = \WeakReference::create($this);
 
-        $struct->onDecorated = $this->onDecorated(...);
-        $struct->onMaximize = $this->onMaximize(...);
-        $struct->onMinimize = $this->onMinimize(...);
-        $struct->onClosing = $this->onClosing(...);
-        $struct->onClosed = $this->onClosed(...);
-        $struct->onResize = $this->onResize(...);
-        $struct->onFocus = $this->onFocus(...);
+        //$struct->onDecorated = $this->onDecorated(...);
+        //$struct->onMaximize = $this->onMaximize(...);
+        //$struct->onMinimize = $this->onMinimize(...);
+        //$struct->onClosing = $this->onClosing(...);
+        $struct->onClosed = WeakClosure::create(function (CData $_) {
+            $this->onClosed($_);
+        });
+        //$struct->onResize = $this->onResize(...);
+        //$struct->onFocus = $this->onFocus(...);
 
         return $struct;
     }
@@ -90,15 +97,15 @@ final readonly class SaucerWindowEventHandler
         /** @var CSaucerWindowEventsStruct $handlers */
         $handlers = $this->handlers;
 
-        $ptr = $this->window->id->ptr;
+        $ptr = $this->ref->get()->id->ptr;
 
-        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_DECORATED, $handlers->onDecorated, false, null);
-        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_MAXIMIZE, $handlers->onMaximize, false, null);
-        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_MINIMIZE, $handlers->onMinimize, false, null);
-        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_CLOSE, $handlers->onClosing, false, null);
+        //$this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_DECORATED, $handlers->onDecorated, false, null);
+        //$this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_MAXIMIZE, $handlers->onMaximize, false, null);
+        //$this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_MINIMIZE, $handlers->onMinimize, false, null);
+        //$this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_CLOSE, $handlers->onClosing, false, null);
         $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_CLOSED, $handlers->onClosed, false, null);
-        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_RESIZE, $handlers->onResize, false, null);
-        $this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_FOCUS, $handlers->onFocus, false, null);
+        //$this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_RESIZE, $handlers->onResize, false, null);
+        //$this->api->saucer_window_on($ptr, WindowEvent::SAUCER_WINDOW_EVENT_FOCUS, $handlers->onFocus, false, null);
     }
 
     private function onDecorated(CData $_, bool $decorated): void
@@ -139,7 +146,7 @@ final readonly class SaucerWindowEventHandler
 
     private function onClosed(CData $_): void
     {
-        $this->dispatcher->dispatch(new WindowClosed($this->window));
+        $this->dispatcher->dispatch(new WindowClosed($this->ref->get()));
     }
 
     /**

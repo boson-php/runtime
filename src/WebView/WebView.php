@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Boson\WebView;
 
+use Boson\Application;
 use Boson\Component\Http\Request;
 use Boson\Component\Saucer\SaucerInterface;
 use Boson\Contracts\EventListener\EventListenerInterface;
@@ -25,8 +26,10 @@ use Boson\WebView\Api\Scripts\ScriptsApiInterface;
 use Boson\WebView\Api\WebComponents\Exception\ComponentAlreadyDefinedException;
 use Boson\WebView\Api\WebComponents\Exception\WebComponentsApiException;
 use Boson\WebView\Api\WebComponents\WebComponentsApiInterface;
+use Boson\WebView\Exception\WindowDereferenceException;
 use Boson\Window\Window;
 use Boson\Window\WindowId;
+use Internal\Destroy\Destroyable;
 use JetBrains\PhpStorm\Language;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -38,9 +41,30 @@ use Psr\EventDispatcher\EventDispatcherInterface;
 final class WebView implements
     IdentifiableInterface,
     EventListenerInterface,
-    ContainerInterface
+    ContainerInterface,
+    Destroyable
 {
     use EventListenerProvider;
+
+    /**
+     * Gets a reference to the parent application to which the
+     * specified webview instance belongs.
+     */
+    public Application $app {
+        get => $this->window->app;
+    }
+
+    /**
+     * Gets a reference to the parent window to which the
+     * specified webview instance belongs.
+     */
+    public Window $window {
+        /**
+         * @throws WindowDereferenceException in case of parent window has been removed
+         */
+        get => $this->reference->get()
+            ?? throw WindowDereferenceException::becauseNoParentWindow();
+    }
 
     /**
      * Contains webview URI instance.
@@ -109,6 +133,11 @@ final class WebView implements
     private readonly Registry $extensions;
 
     /**
+     * @var \WeakReference<Window>
+     */
+    private readonly \WeakReference $reference;
+
+    /**
      * @internal Please do not use the constructor directly. There is a
      *           corresponding {@see WindowFactoryInterface::create()} method
      *           for creating new windows with single webview child instance,
@@ -137,23 +166,22 @@ final class WebView implements
          * @api
          */
         public readonly WebViewId $id,
-        /**
-         * Gets parent application window instance to which
-         * this webview instance belongs.
-         */
-        public readonly Window $window,
+        private readonly Window $parent,
         /**
          * Gets information DTO about the webview with which it was created.
          */
         public readonly WebViewCreateInfo $info,
         EventDispatcherInterface $dispatcher,
     ) {
+        // Parent reference
+        $this->reference = \WeakReference::create($parent);
+
         // Initialization WebView's fields and properties
         $this->listener = self::createEventListener($dispatcher);
 
         // Initialization of WebView's API
-        $this->extensions = new Registry($this, $this->listener, $info->extensions);
-        foreach ($this->extensions->boot() as $property => $extension) {
+        $this->extensions = new Registry($this->listener, $info->extensions);
+        foreach ($this->extensions->boot($this) as $property => $extension) {
             // Direct access to dynamic property is 5+ times
             // faster than magic `__get` call.
             $this->__set($property, $extension);
@@ -304,12 +332,20 @@ final class WebView implements
         $this->saucer->saucer_webview_reload($this->id->ptr);
     }
 
+    /**
+     * @internal for internal usage only
+     */
+    public function destroy(): void
+    {
+        $this->extensions->destroy();
+        $this->listener->removeAllEventListeners();
+
+        \gc_collect_cycles();
+    }
+
     public function __destruct()
     {
-        $this->listener->removeAllEventListeners();
-        $this->extensions->destroy();
-
-        var_dump(__METHOD__);
+        $this->destroy();
     }
 
     public function __get(string $name): object

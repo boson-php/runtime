@@ -38,13 +38,11 @@ final class Registry implements ContainerInterface, Destroyable
     private bool $booted = false;
 
     /**
-     * @param TContext $context
      * @param iterable<array-key, ExtensionInterface<TContext>> $providers
      *
      * @throws ExtensionLoadingException
      */
     public function __construct(
-        private readonly IdentifiableInterface $context,
         private readonly EventListener $listener,
         iterable $providers = [],
     ) {
@@ -52,18 +50,20 @@ final class Registry implements ContainerInterface, Destroyable
     }
 
     /**
+     * @param TContext $context
      * @return array<non-empty-string, object>
      * @throws ExtensionLoadingException
      */
-    public function boot(): array
+    public function boot(IdentifiableInterface $context): array
     {
         if ($this->booted === true) {
             return $this->publicExtensions;
         }
 
+        /** @var ExtensionInterface<TContext> $provider */
         foreach (new DependencyGraph($this->providers) as $provider) {
             try {
-                $extension = $provider->load($this->context, $this->listener);
+                $extension = $provider->load($context, $this->listener);
             } catch (\Throwable $e) {
                 throw ExtensionLoadingException::becauseLoadingExceptionOccurs($e);
             }
@@ -113,22 +113,35 @@ final class Registry implements ContainerInterface, Destroyable
         return isset($this->publicExtensions[$id]);
     }
 
+    /**
+     * @internal for internal usage only
+     */
     public function destroy(): void
     {
+        $destroyed = new \SplObjectStorage();
+
         foreach ($this->privateExtensions as $extension) {
             if ($extension instanceof Destroyable) {
-                $extension->destroy();
+                $destroyed->offsetSet($extension);
             }
         }
 
         foreach ($this->publicExtensions as $extension) {
             if ($extension instanceof Destroyable) {
-                $extension->destroy();
+                $destroyed->offsetSet($extension);
             }
         }
 
         $this->privateExtensions = [];
         $this->publicExtensions = [];
+
+        foreach ($destroyed as $extension) {
+            $extension->destroy();
+        }
+
+        unset($destroyed);
+
+        \gc_collect_cycles();
     }
 
     public function __destruct()
