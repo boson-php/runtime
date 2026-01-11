@@ -304,6 +304,14 @@ final class WebView implements
         $this->saucer->saucer_webview_reload($this->id->ptr);
     }
 
+    public function __destruct()
+    {
+        $this->listener->removeAllEventListeners();
+        $this->extensions->destroy();
+
+        var_dump(__METHOD__);
+    }
+
     public function __get(string $name): object
     {
         return $this->extensions->get($name);
