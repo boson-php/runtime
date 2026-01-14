@@ -7,7 +7,7 @@ namespace Boson\Window;
 enum WindowState
 {
     /**
-     * Standard window state with custom (user defined) sizes.
+     * Standard window state with custom (user-defined) sizes.
      */
     case Normal;
 
@@ -20,4 +20,6 @@ enum WindowState
      * Maximized (i.e. zoomed) window state.
      */
     case Maximized;
+
+    public const self DEFAULT = self::Normal;
 }

@@ -82,19 +82,20 @@ final class Window implements
      *
      * @api
      */
-    public private(set) WindowState $state = WindowState::Normal {
+    public private(set) WindowState $state = WindowState::DEFAULT {
         get => $this->state;
         set {
-            // Dispatch only if the state has changed
-            if ($this->state !== $value) {
-                $this->listener->dispatch(new WindowStateChanged(
-                    subject: $this,
-                    state: $value,
-                    previous: $this->state,
-                ));
+            [$previous, $this->state] = [$this->state, $value];
+
+            if ($previous === $value) {
+                return;
             }
 
-            $this->state = $value;
+            $this->listener->dispatch(new WindowStateChanged(
+                subject: $this,
+                state: $value,
+                previous: $previous,
+            ));
         }
     }
 
@@ -105,7 +106,7 @@ final class Window implements
      */
     public WindowDecoration $decoration {
         /**
-         * Gets current window decoration value.
+         * Gets the current window decoration value.
          *
          * ```
          * if ($window->decoration === WindowDecoration::Default) {
@@ -115,7 +116,7 @@ final class Window implements
          * }
          * ```
          */
-        get => $this->decoration;
+        get => $this->decoration ??= $this->info->decoration;
         /**
          * Updates current window decorations mode.
          *
@@ -127,10 +128,9 @@ final class Window implements
          * ```
          */
         set {
-            $isInitialized = isset($this->decoration);
+            [$previous, $this->decoration] = [$this->decoration, $value];
 
-            // Do nothing if decoration is equal to previous one.
-            if ($isInitialized && $value === $this->decoration) {
+            if ($value === $previous) {
                 return;
             }
 
@@ -140,20 +140,16 @@ final class Window implements
                 WindowDecoration::None => SaucerWindowDecoration::SAUCER_WINDOW_DECORATION_NONE,
             });
 
-            if ($isInitialized) {
-                $this->listener->dispatch(new WindowDecorationChanged(
-                    subject: $this,
-                    decoration: $value,
-                    previous: $this->decoration,
-                ));
-            }
-
-            $this->decoration = $value;
+            $this->listener->dispatch(new WindowDecorationChanged(
+                subject: $this,
+                decoration: $value,
+                previous: $previous,
+            ));
         }
     }
 
     /**
-     * Contains current window size.
+     * Gets the current window size
      *
      * @api
      */
@@ -178,10 +174,19 @@ final class Window implements
          * ```
          * $window->size->update(640, 480);
          * ```
+         *
+         * In case of size is NOT initialized creates a new instance of
+         * {@see ManagedWindowSize} that wraps the native window size
+         * functionality. The returned object allows reading and modifying
+         * the window's width and height through a managed interface.
+         *
+         * The size is managed by the native window system, and any changes
+         * to the size through this interface will be reflected in the actual
+         * window dimensions.
          */
-        get => $this->size;
+        get => $this->size ??= new ManagedWindowSize($this->saucer, $this->id->ptr);
         /**
-         * Allows to update window size using any {@see SizeInterface}
+         * Allows updating window size using any {@see SizeInterface}
          * (for example {@see Size}) instance.
          *
          * ```
@@ -196,20 +201,6 @@ final class Window implements
          * ```
          */
         set(SizeInterface $size) {
-            /**
-             * Allow direct set only on first initialization. First size set
-             * MUST be an internal instance of {@see ManagedWindowSize}.
-             *
-             * @phpstan-ignore-next-line : PHPStan cannot detect uninitialized property state
-             */
-            if (!isset($this->size)) {
-                assert($size instanceof ManagedWindowSize);
-
-                $this->size = $size;
-
-                return;
-            }
-
             $this->size->update($size->width, $size->height);
         }
     }
@@ -241,10 +232,20 @@ final class Window implements
          * ```
          * $window->min->update(640, 480);
          * ```
+         *
+         * In case of min size is NOT initialized creates a new instance of
+         * {@see ManagedWindowMinBounds} that wraps the native window minimum
+         * size bounds functionality. The returned object allows reading and
+         * modifying the window's minimum width and height through a managed
+         * interface.
+         *
+         * The minimum size bounds are managed by the native window system,
+         * and any changes to the bounds through this interface will be
+         * reflected in the actual window constraints.
          */
-        get => $this->min;
+        get => $this->min ??= new ManagedWindowMinBounds($this->saucer, $this->id->ptr);
         /**
-         * Allows to update window minimal size bound using any
+         * Allows updating window minimal size bound using any
          * {@see SizeInterface} (for example {@see Size}) instance.
          *
          * ```
@@ -259,20 +260,6 @@ final class Window implements
          * ```
          */
         set(SizeInterface $size) {
-            /**
-             * Allow direct set only on first initialization. First min size
-             * set MUST be an internal instance of {@see ManagedWindowMinBounds}.
-             *
-             * @phpstan-ignore-next-line : PHPStan cannot detect uninitialized property state
-             */
-            if (!isset($this->min)) {
-                assert($size instanceof ManagedWindowMinBounds);
-
-                $this->min = $size;
-
-                return;
-            }
-
             $this->min->update($size->width, $size->height);
         }
     }
@@ -304,8 +291,18 @@ final class Window implements
          * ```
          * $window->max->update(640, 480);
          * ```
+         *
+         * In case of max size is NOT initialized creates a new instance of
+         * {@see ManagedWindowMaxBounds} that wraps the native window maximum
+         * size bounds functionality. The returned object allows reading and
+         * modifying the window's maximum width and height through a managed
+         * interface.
+         *
+         * The maximum size bounds are managed by the native window system, and
+         * any changes to the bounds through this interface will be reflected
+         * in the actual window constraints.
          */
-        get => $this->max;
+        get => $this->max ??= new ManagedWindowMaxBounds($this->saucer, $this->id->ptr);
         /**
          * Allows to update window maximal size bound using any
          * {@see SizeInterface} (for example {@see Size}) instance.
@@ -322,26 +319,12 @@ final class Window implements
          * ```
          */
         set(SizeInterface $size) {
-            /**
-             * Allow direct set only on first initialization. First max size
-             * set MUST be an internal instance of {@see ManagedWindowMaxBounds}.
-             *
-             * @phpstan-ignore-next-line : PHPStan cannot detect uninitialized property state
-             */
-            if (!isset($this->max)) {
-                assert($size instanceof ManagedWindowMaxBounds);
-
-                $this->max = $size;
-
-                return;
-            }
-
             $this->max->update($size->width, $size->height);
         }
     }
 
     /**
-     * Contains window visibility option.
+     * Contains a window visibility option.
      *
      * @api
      */
@@ -465,7 +448,7 @@ final class Window implements
     public private(set) bool $isClosed = false;
 
     /**
-     * Window aware event listener & dispatcher.
+     * Window aware event listener and dispatcher.
      */
     private readonly EventListener $listener;
 
@@ -489,7 +472,7 @@ final class Window implements
      */
     public function __construct(
         /**
-         * Contains shared WebView API library.
+         * Contains a shared WebView API library.
          */
         private readonly SaucerInterface $saucer,
         /**
@@ -501,28 +484,24 @@ final class Window implements
          */
         public readonly WindowId $id,
         /**
-         * Gets parent application instance to which this window belongs.
+         * Gets a parent application instance to which this window belongs.
          */
         public readonly Application $app,
         /**
-         * Gets an information DTO about the window with which it was created.
+         * Gets information DTO about the window with which it was created.
          */
         public readonly WindowCreateInfo $info,
         EventDispatcherInterface $dispatcher,
     ) {
         // Initialization Window's fields and properties
-        $this->listener = self::createEventListener($dispatcher);
-        $this->size = self::createWindowSize($saucer, $this->id);
-        $this->min = self::createWindowMinSize($saucer, $this->id);
-        $this->max = self::createWindowMaxSize($saucer, $this->id);
+        $this->listener = new DelegateEventListener($dispatcher);
         $this->webviews = new WebViewManager($saucer, $this, $info->webview, $this->listener);
-        $this->decoration = self::createWindowDecorations($info);
 
         // Initialization of Window's API
         $this->extensions = new Registry($this->listener, $info->extensions);
         foreach ($this->extensions->boot($this) as $property => $extension) {
             // Direct access to dynamic property is 5+ times
-            // faster than magic `__get` call.
+            // faster than the magic `__get` call.
             $this->__set($property, $extension);
         }
 
@@ -562,78 +541,21 @@ final class Window implements
     }
 
     /**
-     * Creates local (window-aware) event listener
-     * based on the provided dispatcher.
-     */
-    private static function createEventListener(EventDispatcherInterface $dispatcher): EventListener
-    {
-        return new DelegateEventListener($dispatcher);
-    }
-
-    /**
-     * Creates a new instance of {@see ManagedWindowSize} that wraps the native
-     * window size functionality. The returned object allows reading and
-     * modifying the window's width and height through a managed interface.
-     *
-     * The size is managed by the native window system and any changes to the
-     * size through this interface will be reflected in the actual
-     * window dimensions.
-     */
-    private static function createWindowSize(SaucerInterface $api, WindowId $id): MutableSizeInterface
-    {
-        return new ManagedWindowSize($api, $id->ptr);
-    }
-
-    /**
-     * Creates a new instance of {@see ManagedWindowMinBounds} that wraps the
-     * native window minimum size bounds functionality. The returned object
-     * allows reading and modifying the window's minimum width and height
-     * through a managed interface.
-     *
-     * The minimum size bounds are managed by the native window system and any
-     * changes to the bounds through this interface will be reflected in the
-     * actual window constraints.
-     */
-    private static function createWindowMinSize(SaucerInterface $api, WindowId $id): MutableSizeInterface
-    {
-        return new ManagedWindowMinBounds($api, $id->ptr);
-    }
-
-    /**
-     * Creates a new instance of {@see ManagedWindowMaxBounds} that wraps the
-     * native window maximum size bounds functionality. The returned object
-     * allows reading and modifying the window's maximum width and height
-     * through a managed interface.
-     *
-     * The maximum size bounds are managed by the native window system and any
-     * changes to the bounds through this interface will be reflected in the
-     * actual window constraints.
-     */
-    private static function createWindowMaxSize(SaucerInterface $api, WindowId $id): MutableSizeInterface
-    {
-        return new ManagedWindowMaxBounds($api, $id->ptr);
-    }
-
-    /**
-     * Creates an instance of {@see WindowDecoration} based on the window
-     * creation information.
-     */
-    private static function createWindowDecorations(WindowCreateInfo $info): WindowDecoration
-    {
-        return $info->decoration;
-    }
-
-    /**
      * Gets current (physical) window title
      */
     private function getCurrentWindowTitle(): string
     {
-        $result = $this->saucer->new('char*');
-        $size = $this->saucer->new('size_t');
+        $length = $this->saucer->new('size_t');
+        $this->saucer->saucer_window_title($this->id->ptr, null, \FFI::addr($length));
 
-        $this->saucer->saucer_window_title($this->id->ptr, \FFI::addr($result), \FFI::addr($size));
+        if ($length->cdata === 0) {
+            return '';
+        }
 
-        return \FFI::string($result, $size->cdata);
+        $title = $this->saucer->new("char[{$length->cdata}]");
+        $this->saucer->saucer_scheme_request_method($this->id->ptr, \FFI::addr($title[0]), \FFI::addr($length));
+
+        return \FFI::string(\FFI::addr($title[0]), $length->cdata);
     }
 
     /**
